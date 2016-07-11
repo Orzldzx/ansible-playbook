@@ -7,7 +7,7 @@
 # 获取出口ip,需要有其他的在通过IP判断.(Ksyun)
 ip=$(cat /etc/wan)
 SSHPort=$(ss -4tnpl|awk '/sshd/ {print $4}'|sed 's/[^0-9]//g')
-JumpServerIp="120.92.226.38"
+JumpServerIp="xxx.xxx.xx.xx"
 
 # 停止防火墙
 stop_to_all(){
@@ -65,9 +65,8 @@ start_to_all(){
     iptables -A INPUT -m addrtype --dst-type MULTICAST -j ACCEPT
     iptables -A INPUT -p esp -j ACCEPT
     iptables -A INPUT -p ah -j ACCEPT
-    iptables -A INPUT -s 182.138.102.186 -j ACCEPT
+    iptables -A INPUT -s xx.138.102.x -j ACCEPT
     iptables -A INPUT -s 192.168.7.0/32 -j ACCEPT
-    iptables -A INPUT -s 120.92.226.38 -j ACCEPT
     iptables -A INPUT -s 10.0.0.0/8 -j ACCEPT
 
     # filter表
@@ -112,8 +111,8 @@ backup(){
     Time=$(date +%Y%m%d-%H%M)
     BakFile="/tmp/${HOSTNAME}+${ip}+${Time}.iptables"
     /sbin/iptables-save > $BakFile
-    rsync -azP --port=1888 $BakFile $JumpServerIp::iptables-bak/${HOSTNAME}/ &> /dev/null
-    rm -f $BakFile
+    # rsync -azP --port=1888 $BakFile $JumpServerIp::iptables-bak/${HOSTNAME}/ &> /dev/null
+    # rm -f $BakFile
 }
 
 # 颜色方案
