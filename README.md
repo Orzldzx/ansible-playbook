@@ -2,7 +2,7 @@
 ansible-playbook
 
 # initialize the ubuntu system
-__初始化功能playbook__
+__初始化功能playbook__ --- `init`
 ## 基础设置
 - 创建用户
 - 初始化磁盘
