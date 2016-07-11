@@ -1,0 +1,72 @@
+[client]
+{% if hostType == "mysql_master" %}
+port        = {{ mysql_master_port }}
+{% elif hostType == "mysql_slave" %}
+port        = {{ mysql_slave_port }}
+{% endif %}
+socket      = /var/run/mysqld/mysqld.sock
+
+[mysqld]
+user        = mysql
+pid-file    = /var/run/mysqld/mysqld.pid
+socket      = /var/run/mysqld/mysqld.sock
+{% if hostType == "mysql_master" %}
+port        = {{ mysql_master_port }}
+{% elif hostType == "mysql_slave" %}
+port        = {{ mysql_slave_port }}
+{% endif %}
+basedir     = /usr
+datadir     = {{ mysql_datadir }}
+tmpdir      = /tmp
+
+#-------
+
+lc-messages-dir     = /usr/share/mysql
+bind-address        = 0.0.0.0
+key_buffer_size     = 16M
+max_allowed_packet  = 16M
+thread_stack        = 192K
+thread_cache_size   = 8
+myisam-recover      = BACKUP
+query_cache_limit   = 1M
+query_cache_size    = 16M
+skip-external-locking
+
+#-------
+
+innodb_buffer_pool_size         = 4G
+innodb_log_buffer_size          = 16M
+max_connections                 = 1024
+innodb_additional_mem_pool_size = 4MB
+innodb_flush_log_at_trx_commit  = 2
+table_open_cache                = 2048
+skip_name_resolve
+
+#-------
+
+log_error                       = /var/log/mysql/error.log
+server-id                       = {{ mysql_id }}
+log_bin                         = {{ mysql_bin_log }}/mysql-bin.log
+expire_logs_days                = 1
+max_binlog_size                 = 1G
+innodb_file_per_table           = 1
+explicit_defaults_for_timestamp = true
+log_slave_updates               = 1
+#文件打开数
+#innodb_open_files       	= 65535
+#open_files_limit        	= 200000
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet  = 16M
+
+[mysql]
+
+[isamchk]
+key_buffer      = 16M
+!includedir /etc/mysql/conf.d/
+
+[mysqld_safe]
+socket      = /var/run/mysqld/mysqld.sock
+nice        = 0

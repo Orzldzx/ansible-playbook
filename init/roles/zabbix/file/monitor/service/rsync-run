@@ -1,0 +1,12 @@
+#!/bin/bash
+# ?
+# ?
+# 检查"rsync --daemon"是否在运行
+
+num=`ps -ef|grep rsync|awk '{if($3==1)print}'|wc -l`
+if [ $num -eq 1 ]
+then
+   echo 1
+else
+   echo 0
+fi

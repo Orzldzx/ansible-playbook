@@ -1,0 +1,17 @@
+#!/bin/bash
+# 1un
+# 2015.11.19
+
+spath=/tmp/clear
+dpath=/svndata/svr/log
+
+[ -d $spath ] || mkdir -p $spath
+[ -d "/alidata1/log-bak" ] || mkdir -p /alidata1/log-bak
+
+if [ "`ls -A $spath`" = "" ]; then
+    tar cf /alidata1/log-bak/$(date +%F)_err-log.tar $(find /svndata/svr/log/ -name "*err.log") $dpath/LuaScriptLog
+    rsync -a --delete $spath/ $dpath
+else
+    rm -rf $spath/*
+    rsync -a --delete $spath/ $dpath
+fi

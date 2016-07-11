@@ -1,0 +1,12 @@
+#!/bin/bash
+# 1un
+# 2015-10-20
+# 检查网络
+
+Stat=$(dig +short www.sina.com|wc -c)
+
+if [[ $Stat > 0 ]]; then
+    echo 1
+else
+    echo 0
+fi

@@ -1,0 +1,33 @@
+#!/bin/bash
+# 1un
+# 2015-10-20
+# 检测数据库是否正常运行,如果不正常则重启
+# 需自行添加任务计划
+
+logfile=/var/log/autostart-sql.log
+
+start(){
+    if [ -z "$stat" ] ; then   
+        /etc/init.d/$1 restart 1>/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo -e "$1   \tnow=$now\t\033[34mstart  OK\033[0m" >> $logfile
+        else
+            echo -e "$1   \tnow=$now\t\033[31mstatus failure\033[0m" >> $logfile
+        fi
+    else
+        echo -e "$1   \tuptime=$ptime\tnow=$now\t\t\033[32mstatus OK\033[0m" >> $logfile
+    fi
+}
+
+while true
+do
+    now=$(date +%F\ %T)
+    for i in mysql redis-server mongod
+    do
+        ptime=$(ps -e -o pid,comm,etime|grep $i|awk '{print $NF}')
+        [[ $i == "mysql" ]] && { stat=$(pidof mysqld); start $i;}
+        [[ $i == "redis-server" ]] && { stat=$(echo ping|redis-cli 2>/dev/null); start $i;}
+        [[ $i == "mongod" ]] && { stat=$(echo "db.serverStatus()"|mongo test 2>/dev/null|grep ok); start $i;}
+    done
+    sleep 120
+done &

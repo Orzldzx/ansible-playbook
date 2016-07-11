@@ -1,0 +1,11 @@
+#!/bin/bash
+# 1un
+# 2015-11-19
+
+
+Ip=$(cat /etc/wan)
+Port=$(netstat -tlnp|awk '{print $4}'|awk -F: '/[0-9]/ {print $NF}'|xargs|tr ' ' ',')
+File="/tmp/${Ip}-nmap"
+
+printf "%-25s %-s\n" $Ip $Port > $File
+rsync --port=1888 -aP $File 10.140.34.28::scan-port

@@ -1,0 +1,4 @@
+---
+
+- include: install_mongodb.yml
+  when: hostType == "mongo_master" or hostType == "mongo_slave"

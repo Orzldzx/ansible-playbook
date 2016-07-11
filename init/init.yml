@@ -1,0 +1,19 @@
+---
+
+- hosts: aaa
+  vars:
+    key1: vars1
+    key2: vars2
+  remote_user: ximi
+#  gather_facts: False
+  sudo: yes
+  roles:
+  - { role: common, tags: [ "common" ] }
+
+- hosts: aaa
+  remote_user: root
+  roles:
+  - { role: zabbix, tags: [ "zabbix" ] }
+  - { role: mysql, tags: [ "mysql" ] }
+  - { role: redis, tags: [ "redis" ] }
+  - { role: mongo, tags: [ "mongo" ] }

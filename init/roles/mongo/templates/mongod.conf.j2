@@ -1,0 +1,30 @@
+fork        = true
+pidfilepath = /var/run/mongodb.pid
+auth        = false
+cpu         = false
+port        = {{ mongo_master_port }}
+bind_ip     = {{ mongo_bind_address }}
+
+{% if hostType == 'mongo_master' %}
+dbpath      = {{ mongo_datadir }}/{{ mongo_master_port }}
+logpath     = {{ mongodb_log_dir }}/mongod-master-{{ mongo_master_port }}.log
+{% endif %}
+
+{% if hostType == 'mongo_slave' %}
+dbpath      = {{ mongo_datadir }}/{{ mongo_slaver_port }}
+logpath     = {{ mongodb_log_dir }}/mongod-slave-{{ mongo_slaver_port }}.log
+{% endif %}
+logappend   = true
+journal     = true
+
+{% if hostType == 'mongo_master' %}
+master      = true
+{% endif %}
+
+{% if hostType == 'mongo_slave' %}
+#oplogSize  = 20000
+slave       = true
+source      = {{ mongo_master_source }}:{{ mongo_master_port }}
+slavedelay  = 10
+#autoresync = true
+{% endif %}

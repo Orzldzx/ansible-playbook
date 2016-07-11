@@ -1,0 +1,13 @@
+#!/bin/bash
+# 1un
+# 2015-10-21
+#获取当前服务器所有运行服务加数据库使用内存总数
+
+total=$(free|awk '/Mem:/ {print $2}')
+mems=$(ps -eo rsz,comm|awk '/svrd|mysql|mongo|redis/ {rsz=rsz+$1}END{print rsz}')
+mems=${mems:=0}			#使用
+
+echo "scale=2;$mems/$total*100"|bc|cut -d. -f1
+#修改显示单位为MB
+#expr $total - $mems / 1024	#剩余
+

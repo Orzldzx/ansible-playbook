@@ -1,0 +1,80 @@
+#!/bin/bash
+# 1un
+# 2015-12-09
+# 检测数据库备份
+
+#时间
+date=$(date +%F)
+date_old=$(date -d '-1 day' +%F)
+hour=$(date -d '-1 hour' +%H)
+hour_old=$(date -d '-2 hour' +%H)
+size=
+
+MongoMs=$(grep -c ^master /etc/mongod*.conf)
+RedisMs=$(redis-cli info|grep -c ^role:master)
+[[ ${MongoMs} > 0 || ${RedisMs} > 0 ]] && echo 0 && exit
+
+#当前系统运行有哪些数据库
+tmpfile="/tmp/check-db-bak.tmp"
+for sql in $(ps -eo comm|egrep "mongod|redis-server"|sort -u)
+do
+    for PORT in $(netstat -tulnp|grep -v ^...6|grep $sql|awk -F: '{print $2}'|awk '{print $1}')
+    do
+        echo -e "$sql\t$PORT" >> $tmpfile
+    done
+done
+
+#$1=database_name
+check_log(){	#对比大小
+    logfile=/data/${1}_backup/${2}/${1}.log
+    if [[ "${1}" = "mysqld" || "${1}" = "mongod" ]]; then
+        new_size=$(grep "^${date}" ${logfile}|cut -d'+' -f2)
+	new_size=${new_size:=0}
+#        new_size=${new_size/failed/0}
+        [[ $new_size = "failed" ]] && { echo 7; exit; }
+        old_size=$(grep "^${date_old}" ${logfile}|cut -d'+' -f2)
+        old_size=${old_size:=1}
+        old_size=${old_size/failed/1}
+    elif [[ "${1}" = "redis-server" ]]; then
+        new_size=$(grep "${date} ${hour}" ${logfile}|cut -d'+' -f2)
+        new_size=${new_size:=0}
+#        new_size=${new_size/failed\!/0}
+        [[ $new_size = "failed" ]] && { echo 7; exit; }
+        old_size=$(grep "${date} ${hour_old}" ${logfile}|cut -d'+' -f2)
+        old_size=${old_size:=1}
+        old_size=${old_size/failed\!/1}
+    fi
+    size=$((${new_size}-${old_size}))
+}
+
+[ ! -s $tmpfile ] && echo 0 && exit
+
+while read line_name line_port	#大小小于0则+n
+do
+    check_log ${line_name} ${line_port}
+    if [[ ${size} -lt "-52428800" || ${size} -gt "52428800" ]]; then
+        case ${line_name} in
+            mysqld)
+                n=1;;
+            mongod)
+                n=2;;
+            redis-server)
+                n=4;;
+        esac
+    else
+        n=0
+    fi
+    num=$(($num+$n))
+done < $tmpfile
+
+echo $num
+
+rm -rf $tmpfile
+
+#num = 1    mysql backup error
+#num = 2    mongo backup error
+#num = 3    mysql,mongo backup error
+#num = 4    redis backup error
+#num = 5    mysql,redis backup error
+#num = 6    mongo,redis backup error
+#num = 7    all backup error

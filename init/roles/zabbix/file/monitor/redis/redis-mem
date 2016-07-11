@@ -1,0 +1,11 @@
+#!/bin/bash
+# 1un
+# 2015-10-20
+# 查看redis使用内存大小
+
+[[ $(which redis-cli 2>/dev/null|wc -l) -eq 0 ]] && echo 0 && exit
+
+M=$(redis-cli info|awk -F: '/used_memory:/ {print $2}'|tr -d '\r')
+W=1024
+let MEM=M/W
+echo $MEM

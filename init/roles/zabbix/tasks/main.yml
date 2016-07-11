@@ -1,0 +1,21 @@
+---
+
+# 安装zabbix客户端
+- name: Push zabbix clitnt
+  copy: src=../file/zabbix-2.4.6.tar.gz dest=/tmp/zabbix-2.4.6.tar.gz
+
+- name: Install zabbix client
+  script: ../file/inseall_zabbix_client.sh
+
+- name: Copy script
+  remote_user: root
+  synchronize: src=../file/monitor/ dest=/monitor/ delete=yes perms=yes
+
+    #- name: Configure mysql
+    #  template: src=userparameter_mysql.conf.j2 dest=/etc/zabbix/zabbix_agentd.d/userparameter_mysql.conf
+
+- name: Configure file
+  template: src=zabbix_agentd.conf.j2 dest=/etc/zabbix/zabbix_agentd.conf
+  notify:
+  - start zabbix client
+  - Clear tmpfile

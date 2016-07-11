@@ -1,0 +1,105 @@
+#!/bin/bash
+# 1un
+# 2016-02-01 -update
+# zabbix自动发现服务项,监控服务各项状态
+
+[ ! -s /svndata/svr/mod.txt ] && echo 1 && exit
+
+SerName(){
+    Ser=($(cat /svndata/svr/mod.txt  |awk '{print $1}'))
+    printf '{\n'
+    printf '\t"data": [\n'
+    for((i=0;i<${#Ser[@]};++i))
+    {
+        num=$(echo $((${#Ser[@]}-1)))
+        if [ "$i" != ${num} ];
+                then
+            printf "\t\t{ \n"
+            printf "\t\t\t\"{#SITENAME}\":\"${Ser[$i]}\"},\n"
+        else
+            printf "\t\t{ \n"
+            printf "\t\t\t\"{#SITENAME}\":\"${Ser[$num]}\"}\n\t\t]\n}\n"
+        fi
+    }
+}
+
+GetValue(){
+    PID=$(pgrep ${1:0:15})
+
+    GetMem(){
+        MEMUsage=$(ps -o rsz -p $1|grep -v RSZ)
+        MEMUsage=$(echo "sclae=2; $MEMUsage/1000" | bc)
+        echo $MEMUsage
+        }
+    GetVsz(){
+        MEMUsage=$(ps -o vsz -p $1|grep -v VSZ)
+        MEMUsage=$(echo "sclae=2; $MEMUsage/1000" | bc)
+        echo $MEMUsage
+        }
+    GetEtime(){
+        TIME=$(ps -o etime -p $1|grep -v ELAPSED|sed 's/ *//')
+        if [ ${#TIME} -lt 8 ];then          #进程运行时间不足一小时
+            ETIME=$(echo $TIME|sed 's/^/00-00:/')
+        elif [ ${#TIME} -lt 9 ];then        #进程运行时间不足一天
+            ETIME=$(echo $TIME|sed 's/^/00-/')
+        else
+           ETIME=$TIME
+        fi
+        ETIMEUsage=$(echo $ETIME|cut -d: -f1|awk -F'-' '{print $1"*24+"$2}'|bc)
+        echo $ETIMEUsage
+	}
+    GetPsCpu(){
+        CPUUsage=$(ps -o pcpu -p $1|grep -v CPU)
+	echo $CPUUsage
+        }
+
+    case $2 in
+    cpu)
+        cpu_usage=`GetPsCpu $PID`
+        echo $cpu_usage
+        ;;
+    mem)
+        mem_usage=`GetMem $PID`
+        echo $mem_usage
+        ;;
+    vsz)
+        mem_usage=`GetVsz $PID`
+        echo $mem_usage
+        ;;
+    swap)
+        swap_usage=`awk '/^Swap:/ {SWAP+=$2}END{print SWAP}' /proc/$PID/smaps`
+        if [ $swap_usage -eq 0 ]; then
+            echo 0
+        else
+            echo $swap_usage
+        fi
+        ;;
+    etime)
+        etime_usage=$(GetEtime $PID)
+        echo $etime_usage
+        ;;
+    *)
+        echo "Wrong"
+        ;;
+    esac
+}
+
+GetStatus(){
+    num=$(ps -ef|grep $1|awk '{if($3==1)print}'|wc -l)
+    echo $num
+}
+
+case "$1" in
+SerName)
+    SerName
+    ;;
+GetValue)
+    GetValue $2 $3
+    ;;
+GetStatus)
+    GetStatus $2
+    ;;
+*)
+    echo "Usage:$0 { SerName | GetValue [SerName] [type] | GetStatus [SerName] }"
+    ;;
+esac

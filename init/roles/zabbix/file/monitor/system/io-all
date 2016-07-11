@@ -1,0 +1,60 @@
+#!/bin/bash
+# 1un
+# 2015-10-20
+# 获取所有磁盘状态信息
+
+DISK=($(awk '/vd[a-z]$/ {print $NF}' /proc/partitions))
+DiskName=()
+for(( i=0;i<${#DISK[@]};i++))
+do
+	dev=${DISK[$i]}
+	vg=$(sudo /sbin/pvdisplay|grep -A 1 $dev 2>/dev/null|awk '/VG Name/ {print $3}')
+	lv=$(sudo /sbin/lvdisplay |grep -B 1 $vg 2>/dev/null|awk '/LV Name/ {print $3}')
+	lv=${lv##*/}
+	DiskName[$i]=$(df|grep $lv 2>/dev/null|awk '{print $NF}')
+done
+
+Device()
+{
+	printf '{\n'
+	printf '\t"data":[\n'
+	for(( i=0;i<${#DISK[@]};i++))
+	do
+		num=$(echo $((${#DISK[@]}-1 )))
+		[[ ! -n ${DiskName[$i]} ]] && continue
+		if [[ "$i" -ne ${num} ]];then
+			printf "\t\t{\n"
+			printf "\t\t  \"{#DISK}\":\"${DISK[$i]}\",\"{#DISKNAME}\":\"${DiskName[$i]}\"},\n"
+		else
+			printf "\t\t{\n"
+			printf "\t\t  \"{#DISK}\":\"${DISK[$num]}\",\"{#DISKNAME}\":\"${DiskName[$num]}\"}\n"
+		fi
+	done
+	printf "\t\t]\n"
+	printf "}\n"
+}
+
+
+case "$1" in
+	DISK)
+		Device;;
+	USE)
+		iostat -kx 1 2| awk '{if($1 == "'$2'") print $NF}'|tail -1;;
+	READ)
+		iostat -kx 1 2| awk '{if($1 == "'$2'") print $6}'|tail -1;;
+	WRITE)
+		iostat -kx 1 2| awk '{if($1 == "'$2'") print $7}'|tail -1;;
+	CHECK)
+		for ((i=0;i<${#DISK[@]};i++))
+		do
+			if [[ ${DISK[$i]} = $2 ]]; then
+				[[ ! -d ${DiskName[$i]}/tmp ]] && sudo mkdir -p ${DiskName[$i]}/tmp && sudo chmod 777 ${DiskName[$i]}/tmp
+				t=$(mktemp ${DiskName[$i]}/tmp/test.XXX 2>/dev/null)
+				[ $? -eq 0 ] && { echo 1 ; rm -f $t ; } || echo 0
+			fi
+		done
+		;;
+	*)
+		echo "Usage:$0 { DISK | USE [dev] | READ [dev] | WRITE [dev] | CHECK [dev] }"
+		exit;;
+esac

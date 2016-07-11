@@ -1,0 +1,43 @@
+---
+- name: Push mongodb package
+  copy: src=../file/mongodb-3.0.6.tgz dest=/opt owner=root group=root
+
+- name: ADD mongodb user
+  shell: useradd mongodb
+
+- name: Install acl package
+  apt: name={{ item }} state=present
+  with_items:
+  - acl
+
+- name: Extract package
+  raw: tar xf /opt/mongodb-3.0.6.tgz -C /opt && mv /opt/mongodb-linux-x86_64-ubuntu1204-3.0.6 /opt/mongodb
+
+- name: Environment mongodb
+  raw: echo "PATH=$PATH:/opt/mongodb/bin" >> /etc/profile && . /etc/profile
+
+- name: ADD permission to use
+  raw: echo "rs.slaveOk();" >> /root/.mongorc.js
+
+- name: Change Privilege
+  file: path=/opt/mongodb/bin owner=root group=root mode=754
+
+- name: Change mongodb acl
+  acl: name=/opt/mongodb/bin/mongo entity=zabbix etype=user permissions="rwx" state=present
+
+- name: Create mongodb worker datadir
+  file: path={{ item }} state=directory
+  with_items:
+  - "{{ mongodb_log_dir }}"
+  - "{{ mongo_datadir }}/{{ mongo_master_port }}"
+  - "{{ mongo_config_dir }}"
+  - "{{ mongo_backup_dir }}/{{ mongo_master_port }}"
+  register: result
+  ignore_errors: True
+
+- name: Push {{ hostType }} configure file
+  template: src=mongod.conf.j2 dest=/etc/mongodb/mongod.conf
+  when: result|success
+  notify:
+   - Start mongodb
+   - Delete mongodb package

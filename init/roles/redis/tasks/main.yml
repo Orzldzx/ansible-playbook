@@ -1,0 +1,4 @@
+---
+
+- include: install_redisdb.yml
+  when: hostType == "redis_master" or hostType == "redis_slave"

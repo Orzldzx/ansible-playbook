@@ -1,0 +1,5 @@
+# 主机名(ip地址|主机名)  必要变量:(hostName|hostType) 可选变量:(mysql_id)
+
+[aaa]
+192.168.7.111 hostName=ansible-test1 ansible_ssh_port=13021 ansible_ssh_private_key_file=/mnt/playbooks/ksyun-key hostType=mysql_master mysql_id=100
+192.168.7.113 hostName=ansible-test2 ansible_ssh_port=13021 ansible_ssh_private_key_file=/mnt/playbooks/ksyun-key hostType=mysql_slave  mysql_id=101

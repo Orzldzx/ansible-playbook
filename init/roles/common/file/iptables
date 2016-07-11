@@ -1,0 +1,175 @@
+#!/bin/sh
+# 1un
+# 2015-12-01
+#需要重启，请使用enforce_restart
+
+
+# 获取出口ip,需要有其他的在通过IP判断.(Ksyun)
+ip=$(cat /etc/wan)
+SSHPort=$(ss -4tnpl|awk '/sshd/ {print $4}'|sed 's/[^0-9]//g')
+JumpServerIp="120.92.226.38"
+
+# 停止防火墙
+stop_to_all(){
+    iptables -P INPUT ACCEPT
+    iptables -P FORWARD ACCEPT
+    iptables -F
+    iptables -t nat -F
+    iptables -X
+    iptables -t nat -X
+}
+
+# 清除所有规则
+clear_to_all(){
+    iptables -F
+    iptables -t nat -F
+    iptables -X
+    iptables -t nat -X
+}
+
+# 加载模块
+install_mod(){
+    modules="ip_tables iptable_nat ip_nat_ftp ip_nat_irc ip_conntrack ip_conntrack_ftp ip_conntrack_irc"
+
+    for mod in $modules
+    do
+        testmod=`lsmod | grep "^${mod} " | awk '{print $1}'`
+        if [ "$testmod" == "" ]; then
+            modprobe $mod
+        fi
+    done
+
+    echo "1" > /proc/sys/net/ipv4/ip_forward
+    echo "1" > /proc/sys/net/ipv4/tcp_syncookies
+
+    for i in /proc/sys/net/ipv4/conf/*/{rp_filter,log_martians}
+    do
+        echo "1" > $i
+    done
+
+    for i in /proc/sys/net/ipv4/conf/*/{accept_source_route,accept_redirects,send_redirects}
+    do
+        echo "0" > $i
+    done
+}
+
+# 启动防火墙
+start_to_all(){
+    # 初始化
+    iptables -P INPUT DROP
+    iptables -P FORWARD DROP
+
+    iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A INPUT -p icmp -m icmp --icmp-type any -j ACCEPT
+    iptables -A INPUT -m addrtype --dst-type MULTICAST -j ACCEPT
+    iptables -A INPUT -p esp -j ACCEPT
+    iptables -A INPUT -p ah -j ACCEPT
+    iptables -A INPUT -s 182.138.102.186 -j ACCEPT
+    iptables -A INPUT -s 192.168.7.0/32 -j ACCEPT
+    iptables -A INPUT -s 120.92.226.38 -j ACCEPT
+    iptables -A INPUT -s 10.0.0.0/8 -j ACCEPT
+
+    # filter表
+    ## 开放端口
+#    iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport $SSHPort -j ACCEPT
+
+    ## 过滤关键字
+    # iptables -A {INPUT,OUTPUT,FORWARD} -p {tcp,udp} -{s,d} 源地址|目的地址 --{dport,sport} 端口号 -m string --string "/abc/def" -algo {bm,kmp} -j DROP
+    # 设置字符匹配的查询算法,一般默认使用bm算法效果就可以了,另外还可以设置kmp算法.  (bm = Boyer-Moore, kmp = Knuth-Pratt-Morris)
+#    iptables -A OUTPUT --dport 80 -p tcp -m string --string "youku.com" -algo bm -j DROP
+
+    ## 允许转发
+#    iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+#    iptables -A FORWARD -s IP/MASK -p tcp --sport PORT -j ACCEPT
+
+### -------------------
+
+    # NAT表
+    # IP=ip地址, PORT=端口, D-IP=目的地址, D-PORT=目的端口 S-IP=源ip地址, L-IP=本地出口ip地址(可能是内网地址也可能是外网地址)
+    ## 转发端口
+#    iptables -t nat -A PREROUTING -p tcp -m tcp --dport D-PORT -j REDIRECT --to-ports D-PORT
+
+    ## 转发ip && 端口
+#    iptables -t nat -A PREROUTING -p tcp --dport D-PORT -j DNAT --to-destination D-IP:D-PORT
+#    iptables -t nat -A POSTROUTING -d D-PORT -j SNAT --to L-IP
+
+    ## 通过设备转发端口
+#    iptables -t nat -A POSTROUTING -o eth0 -p tcp -j SNAT --to-source L-IP
+}
+
+# 查看状态
+_status () {
+    for table in filter nat
+    do
+        echo $"Table: $table"
+        iptables -t $table -nvL --line-numbers && echo
+    done
+}
+
+# 备份防火墙配置
+backup(){
+    Time=$(date +%Y%m%d-%H%M)
+    BakFile="/tmp/${HOSTNAME}+${ip}+${Time}.iptables"
+    /sbin/iptables-save > $BakFile
+    rsync -azP --port=1888 $BakFile $JumpServerIp::iptables-bak/${HOSTNAME}/ &> /dev/null
+    rm -f $BakFile
+}
+
+# 颜色方案
+print(){
+    if [[ $1 = "blue" ]]; then
+        printf "\n \033[1;37miptables %-20s\033[1;34m[%s] %s\033[0m\n\n" "$2" "$3" "$4"
+    elif [[ $1 = "red" ]]; then
+        printf "\n \033[1;37miptables %-20s\033[1;31m[%s] %s\033[0m\n\n" "$2" "$3" "$4"
+    elif [[ $1 = "green" ]]; then
+        printf "\n \033[1;37miptables %-20s\033[1;32m[%s] %s\033[0m\n\n" "$2" "$3" "$4"
+    elif [[ $1 = "yellow" ]]; then
+        printf "\n \033[1;37miptables %-20s\033[1;33m[%s] %s\033[0m\n\n" "$2" "$3" "$4"
+    fi
+}
+
+# arg="start"
+if [ $# -ne 0 ]; then
+    if [ "$1" = "start" -o "$1" = "status" -o "$1" = "stop" -o "$1" = "restart" -o "$1" = "reload" ]; then
+        arg="$1"
+    fi
+else
+    echo "Please enter: script [ start | stop | restart | reload | status ]"
+    exit
+fi
+
+case $arg in
+    start )
+        [[ $(/sbin/iptables-save | grep -c "^-A") > 1 ]] && { print red start False '#请清空规则后使用start'; exit; }
+        backup
+        install_mod
+        start_to_all
+        print green start Success
+    ;;
+    stop)
+        stop_to_all
+        print red stop Success
+    ;;
+    reload)
+        backup
+        clear_to_all
+        start_to_all
+        print yellow reload Success
+    ;;
+    restart)
+        backup
+        install_mod
+        stop_to_all
+        start_to_all
+        print yellow enforce_restart Success
+    ;;
+    status)
+        _status
+        print blue status Success
+        ;;
+esac
+
+# rsync 推送回各个防火墙当前状态
+#/sbin/iptables-save > /tmp/${ip}-status.iptables
+#rsync -azP --port=1888 /tmp/${ip}-status.iptables $JumpServerIp::iptables-bak/status/ &> /dev/null

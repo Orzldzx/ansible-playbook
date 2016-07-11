@@ -1,0 +1,72 @@
+# 1un
+# 2016-01-26
+# 作为用户环境变量被初始化脚本调用
+
+
+#------------------------------------------------------
+
+if [ "$PS1" ]; then
+  if [ "$BASH" ] && [ "$BASH" != "/bin/sh" ]; then
+    # The file bash.bashrc already sets the default PS1.
+    # PS1='\h:\w\$ '
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+  else
+    if [ "`id -u`" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
+
+#------------------------------------------------------
+
+if [ -d /etc/profile.d ]; then
+  for i in /etc/profile.d/*.sh; do
+    if [ -r $i ]; then
+      . $i
+    fi
+  done
+  unset i
+fi
+
+#------------------------------------------------------
+
+USER_IP=`who -u am i 2>/dev/null| awk '{print $NF}'|sed -e 's/[()]//g'`
+
+#------------------------------------------------------
+
+STFILESIZE=5000
+HISTFILE=/var/log/recordhistory.txt
+HISTSIZE=3000
+export HISTFILE
+export HISTTIMEFORMAT="(`whoami`@$USER_IP %Y-%m-%d %H:%M:%S) -> "
+shopt -s histappend
+
+#------------------------------------------------------
+
+alias svrd="ps -ef|grep svr[d]"
+alias ll='ls -alF'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias lip='cat /etc/wan'
+mkcd(){ mkdir -p $1 ; cd $1 ; }
+
+#------------------------------------------------------
+
+LanIp=$(ip addr show eth0|awk '/inet / {print $2}')
+
+if [ $(id -u) != "0" ]; then
+    PS1="\[\e[1;33m\]\h \[\e[m\]\[\e[1;30m\][ Wan:$(cat /etc/wan) Lan:$(echo $LanIp) ]\[\e[m\]\[\e[1;35m\] \w \n\t \u$\[\e[m\] "
+    TMOUT=300
+else
+    PS1="\[\e[1;33m\]\h \[\e[m\]\[\e[1;36m\][ Wan:$(cat /etc/wan) Lan:$(echo $LanIp) ]\[\e[m\]\[\e[1;32m\] \w \n\t#\[\e[m\] "
+    ulimit -c unlimited
+    ulimit -SHn 65535
+    echo 0 > /proc/sys/vm/swappiness
+fi
+
+#------------------------------------------------------

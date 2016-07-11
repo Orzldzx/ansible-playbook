@@ -1,0 +1,34 @@
+#!/bin/bash
+# 1un
+# 2015-11-17
+# 每小时备份redis数据库
+
+date=$(date +%F)
+hour=$(date +%H)
+now_time=$(date +%F\ %T)
+dpath="/data/redis"
+backuppath="/data/redis-server_backup"
+
+#按端口循环备份redis
+for port in $(netstat -tlnp|grep redis-server|grep -w '^tcp'|awk -F':| ' '{print $17}'|uniq)
+do
+    baknow="$backuppath/$port"
+    [ ! -d "$baknow/$date" ] && mkdir -p $baknow/$date
+
+    backupname=redis-server_${port}_$(date +%Y-%m-%d_%H)
+    $(which redis-cli) -h 127.0.0.1 -p $port -a pwd bgsave && sleep 120
+
+    cd $dpath/$port
+
+    tar acf $baknow/$date/$backupname.tgz dump.rdb
+    if [ "$?" == "0" ]; then
+        cd $baknow/$date
+        echo -e "${now_time}\tfilename:$backupname.tgz\tsize+`du -sb $backupname.tgz|cut -f1`+\tbackup success!" >> ../redis-server.log
+        md5sum $backupname.tgz >> ../md5sum.log
+    else
+        echo -e "${now_time}\t$(hostname)\tredis\t backup\t+failed!+" >> ../redis-server.log
+    fi
+    rm -rf $(date -d '-3 day' +%F)
+    sleep 10
+done
+

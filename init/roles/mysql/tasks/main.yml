@@ -1,0 +1,4 @@
+---
+
+- include: install_mysql.yml
+  when: hostType == "mysql_master" or hostType == "mysql_slave"

@@ -1,0 +1,108 @@
+---
+
+- name: Push mysqldb package
+  copy: src=../file/mysql5-6-26.tgz dest=/tmp/ owner=root group=root
+
+- name: Extract Package
+  raw: mkdir -p /tmp/mysql | tar xf /tmp/mysql5-6-26.tgz -C /tmp/mysql
+
+- name: Change appaorm
+  copy: src=../file/usr.sbin.mysqld dest=/etc/apparmor.d/usr.sbin.mysqld owner=root group=root mode=644
+
+- name: apparmor restart
+  service: name=apparmor state=restarted
+
+- name: Install Mysql-common
+  apt: deb={{ item }}
+  with_items:
+  - /tmp/mysql/libaio1_0.3.109-2ubuntu1_amd64.deb
+  - /tmp/mysql/mysql-common_5.6.26-1ubuntu12.04_amd64.deb
+
+- name: DEBconf Mysql-community-server
+  debconf: name=mysql-community-server_5.6.26-1ubuntu12.04_amd64.deb question={{ item.name }} value={{ item.var }} vtype={{ item.type }}
+  with_items:
+  - { name: "mysql-community-server/root-pass", var: "{{ mysql_root_pass }}", type: "password" }
+  - { name: "mysql-community-server/re-root-pass", var: "{{ mysql_root_pass }}", type: "password" }
+  - { name: "mysql-community-server/data-dir", var: "ok", type: "note"  }
+
+- name: Install Mysql-community-server
+  apt: deb=/tmp/mysql/mysql-community-server_5.6.26-1ubuntu12.04_amd64.deb
+
+- name: Install Mysql-server
+  apt: deb=/tmp/mysql/mysql-server_5.6.26-1ubuntu12.04_amd64.deb
+
+- name: Install Mysql-community-client
+  apt: deb=/tmp/mysql/mysql-community-client_5.6.26-1ubuntu12.04_amd64.deb
+
+- name: Install Mysql-client
+  apt: deb=/tmp/mysql/mysql-client_5.6.26-1ubuntu12.04_amd64.deb
+
+- name: Install Mysql-python
+  apt: name=python-mysqldb state=present
+
+- name: Stop mysql-server
+  service: name=mysql state=stopped
+
+- name: Create Mysql Datadir
+  file: path={{ item }} state=directory owner=mysql group=mysql
+  with_items:
+  - "{{ mysql_datadir }}"
+  - "{{ mysql_bin_log }}"
+
+- name: Move mysql data
+  raw: cp -rf /var/lib/mysql/* {{ mysql_datadir }}
+#  file: src=/var/lib/mysql dest={{ mysql_datadir }} owner=mysql group=mysql recurse=yes state=directory
+
+- name: mysql privilege
+#  shell: chown -R mysql:mysql /data/mysql
+  file: dest=/data/mysql owner=mysql group=mysql recurse=yes
+
+- name: Push Mysql Configure
+  template: src=my.cnf.j2 dest=/etc/mysql/my.cnf
+
+- name: Delete Mysql Tempfile
+  shell: rm -rf /tmp/mysql*
+
+- name: Start mysql
+  service: name=mysql state=started
+
+- name: Get mysql status
+  raw: ps -ef|grep mysql|grep -v grep|wc -l
+  register: mysql_status
+
+- name: ADD mysql user
+  mysql_user: login_user=root login_password={{ mysql_root_pass }} login_port={{ mysql_master_port }} name={{ item.name }} password={{ item.pass }} priv={{ item.priv }} host={{ item.host }} login_unix_socket='/var/run/mysqld/mysqld.sock' state=present
+  with_items: mysql_users
+  until: mysql_status.stdout.find('2') != -1
+  retries: 6
+  delay: 10
+
+- name: Get the current master servers replication status
+  mysql_replication: login_user=root
+                     login_password={{ mysql_root_pass }}
+                     login_host={{ redis_master_source }}
+                     login_port={{ redis_master_port }}
+                     login_unix_socket='/var/run/mysqld/mysqld.sock'
+                     mode=getmaster
+  register: repl_stat
+  when: hostType == "mysql_slave"
+
+- name: Change the master in slave to start the replication
+  mysql_replication: login_user=root
+                     login_password={{ mysql_root_pass }}
+                     login_port={{ mysql_slave_port }}
+                     mode=changemaster
+                     master_host={{ mysql_master_source }}
+                     master_log_file={{ repl_stat.File }}
+                     master_log_pos={{ repl_stat.Position }}
+                     master_user={{ mysql_users[3].name }}
+                     master_password={{ mysql_users[3].pass }}
+  ignore_errors: True
+  when: hostType == "mysql_slave"
+
+- name: Start slave in slave to start the replication
+  mysql_replication: login_user=root
+                     login_password={{ mysql_root_pass }}
+                     login_port={{ mysql_slave_port }}
+                     mode=startslave
+  when: hostType == "mysql_slave"

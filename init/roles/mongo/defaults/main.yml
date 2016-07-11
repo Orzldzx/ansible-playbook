@@ -1,0 +1,8 @@
+---
+
+mongo_bind_address: 0.0.0.0
+mongo_datadir: /data/mongodb
+
+mongo_config_dir: /etc/mongodb
+mongodb_log_dir: /var/log/mongodb
+mongo_backup_dir: /data/mongodb_back

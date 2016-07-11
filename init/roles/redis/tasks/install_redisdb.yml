@@ -1,0 +1,48 @@
+---
+- name: Push redisdb package
+  copy: src=../file/redis-3.0.4.tar.gz dest=/opt owner=root group=root
+
+- name: ADD redis user
+  shell: useradd redis
+
+- name: Extract package
+  raw: tar xf /opt/redis-3.0.4.tar.gz -C /opt && mv /opt/redis-3.0.4 /opt/redis
+
+- name: install redisdb
+  raw: cd /opt/redis/ &&  make
+
+- name: Create redisdb Datadir
+  file: path={{ item }} state=directory
+  with_items:
+  - "{{ redis_log_dir }}"
+  - "{{ redis_data_dir }}/{{ redis_master_port }}"
+  - "{{ redis_back_dir }}/{{ redis_slave_port }}"
+  - "{{ redis_config_dir }}"
+
+- name: Change privilege
+  shell: path=/opt/redis/src/{{ item }} owner=root group=root mode=754
+  with_items:
+  - "redis-server"
+  - "redis-cli"
+
+#- name: Change redisdb acl
+#  acl: name=/opt/redis/src/{{ item }} entity=zabbix etype=user permissions="rwx" state=present
+#  with_items:
+#  - "redis-server"
+#  - "redis-cli"
+
+- name: Create redisdb lisks
+  file: src=/opt/redis/src/{{ item }} dest=/usr/local/bin/{{ item }} state=link
+  with_items:
+  - "redis-server"
+  - "redis-cli"
+  - "redis-check-aof"
+  - "redis-check-dump"
+  register: result
+  ignore_errors: True
+
+- name: Push {{ hostType }} configure file
+  template: src=redis.conf.j2 dest=/etc/redis/redis.conf
+  notify:
+  - Start redis-server
+  - Delete redisdb package

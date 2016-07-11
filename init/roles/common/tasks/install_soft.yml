@@ -1,0 +1,51 @@
+---
+# 安装软件
+
+## 更新系统软件
+#- name: Update system software
+#  apt: update_cache=yes cache_valid_time=180 upgrade=dist
+
+# 安装必要软件
+- name: Install software
+  apt: name={{ item }} state=present
+  with_items:
+  - htop
+  - iotop
+#  - nload   流量检测
+#  - bmon    流量检测
+  - vim
+  - gdb
+  - unzip
+  - screen
+  - lrzsz
+  - liblua5.1-dev
+  - liblua5.1-curl0
+  - liblua5.1-0-dev
+  - git
+  - curl
+  - dos2unix
+  - gcc
+  - g++
+  - make
+  - cmake
+  - zlib1g-dev
+#  - libssl-dev
+  - openssl
+  - tree
+  - build-essential
+  - iftop
+  - bc
+  - acl
+  - sysstat
+  - wget
+
+# 安装rsync
+- name: Install rsync
+  apt: name=rsync state=present
+
+- name: update configure rsync
+  copy: src=../file/rsyncd.conf dest=/etc/rsyncd.conf owner=root group=root mode=0644
+  sudo: yes
+  notify:
+  - update configure rsync
+  - start rsync --daemon

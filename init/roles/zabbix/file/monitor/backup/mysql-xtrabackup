@@ -1,0 +1,103 @@
+#!/bin/bash
+# 1un
+# 2015-10-22
+# Function: 热备mysql(可以实现按天进行全量、增量备份)
+
+#时间
+date=$(date +%F)
+hour=$(date +%H)
+now=$(date +%F-%H)
+old=$(date -d '-1 hour' +%F-%H)
+oldate=$(date -d '-2 day' +%F)
+
+#命令
+xtrabackup=$(which innobackupex)
+email=/monitor/mail/sendEmail
+
+#帐号
+user=
+password=
+mail_user=texas_ximi@aliyun.com
+mail_pass=
+mail_smtp=smtp.mail.aliyun.com
+
+#备份目录
+backup_path=/alidata1/xtrabackup/data
+backup_tar_path=/alidata1/xtrabackup/tar
+backup_log=/var/log/xtrabackup.log
+
+#配置文件
+conf=/etc/mysql/my.cnf
+socket=/var/run/mysqld/mysqld3306.sock
+
+#返回值
+# 1     有进程存在
+error1(){ echo -e "$(date +%F\ %T)\tProcess exists" >>${backup_log}; email "Process exists!!"; exit 3; }
+# 2     备份不成功
+error2(){ email "backup false!!"; exit 2; }
+# 3     没有找到全量备份
+error3(){ echo -e "$(date +%F\ %T)\tAll backup not found" >>${backup_log}; email "All backup not found!!"; exit 3; }
+
+#全备
+all_backup(){
+    ${xtrabackup} --user=${user} --password=${password} --defaults-file=${conf} --socket=${socket} ${backup_path} 2>>${backup_log}
+    num=$(tail -1 $backup_log|grep -c OK)
+    [ ${num} -eq 1 ] && { cd ${backup_path}/; tar zcf ${backup_tar_path}/${date}/${now}_all.tgz ${now}; } || error2
+}
+
+#判断备份目录是否有全量备份,如果没有则等待下次全备以后开始增备
+check_backup(){
+    [ $(find ${backup_path} -name xtrabackup_checkpoints|wc -l) -eq 0 ] && error3
+    all_bak=$(grep "from_lsn = 0" $(find ${backup_path} -name xtrabackup_checkpoints)|wc -l)
+    [ ${all_bak} -eq 0 ] && error3
+}
+
+#增备
+inc_backup(){
+    ${xtrabackup} --user=${user} --password=${password} --defaults-file=${conf} --socket=${socket} --incremental ${backup_path} --incremental-basedir=${backup_path}/${old} 2>>${backup_log}
+
+    #从日志判断是否成功
+    num=$(tail -1 $backup_log|grep -c OK)
+    #从checkpoints判断是否连续
+    to_lsn=$(grep to_lsn ${backup_path}/${old}/xtrabackup_checkpoints|awk '{print $3}')
+    from_lsn=$(grep from_lsn ${backup_path}/${now}/xtrabackup_checkpoints|awk '{print $3}')
+
+    #不成功发邮件报警
+    if [ ${num} -eq 1 -a ${to_lsn} -eq ${from_lsn} ]; then
+        cd ${backup_path}/
+        tar zcf ${backup_tar_path}/${date}/${now}_inc.tgz ${now}
+    else
+        error2
+    fi
+}
+
+#发送email
+email(){
+    ${email} -f ${mail_user} -s ${mail_smtp} -t sys@ximigame.com \
+    -u "$HOSTNAME $0 error!!" -o message-content-type=html -o message-charset=utf8 \
+    -xu ${mail_user} -xp ${mail_pass} -m $1
+}
+
+#如果进程存在则退出
+[ $(ps -ef|grep -v grep|grep -c innobackupex) -ge 1 ] && echo "Warning: xtrabackup process already exist." >>${backup_log} && error1
+
+#准备备份目录
+[ -d ${backup_path} ] || mkdir -p ${backup_path}
+[ -d ${backup_tar_path} ] || mkdir -p ${backup_tar_path}
+[ -d ${backup_tar_path}/${date} ] || mkdir -p ${backup_tar_path}/${date}
+
+#修改xtrabackup默认的备份目录命名
+sed -i 's/%Y-%m-%d_%H-%M-%S/%Y-%m-%d-%H/' ${xtrabackup}
+
+#0点和12点全量,其他增量
+if [ ${hour} -eq 00 -o ${hour} -eq 12 ]; then
+    rm -rf ${backup_path}/*
+    sleep 5
+    all_backup
+else
+    check_backup
+    inc_backup
+fi
+
+#删除5天前备份
+rm -rf ${backup_tar_path}/${oldate}

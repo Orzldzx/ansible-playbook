@@ -1,0 +1,142 @@
+---
+
+# 修改shell环境
+- name: Edit shell environment
+  raw: rm -f /bin/sh && ln -s /bin/bash /bin/sh
+  sudo: yes
+
+# 新建用户
+- name: Add User
+  user: name={{ item }} createhome=yes state=present
+  with_items:
+  - jumpser
+  - ximiYW
+  - ximiDEV
+  - ximiMysql
+  - ximiMongo
+  - ximiRedis
+  - ximiTEST
+- name: Add ssh_key
+  authorized_key: user={{ jumpuser }} key="{{ lookup('file', '../keys/jumpser.pub') }}"
+                  path=/home/jumpser/.ssh/authorized_keys manage_dir=no
+- name: Configure /etc/sudoers
+  lineinfile: dest=/etc/sudoers state=present line='{{ item }}' validate='visudo -cf %s'
+  with_items:
+  - "{{ jumpuser }} ALL=(ALL) NOPASSWD: ALL"
+
+- name: Add root ssh_key
+  authorized_key: user={{ rootuser }} key="{{ lookup('file', '../keys/root.pub') }}"
+                  path=/root/.ssh/authorized_keys manage_dir=no
+
+# "$
+# 初始化磁盘
+#- name: New Disk Partition
+#  script: ../script/disk.sh {{ disk }}
+#- name: New Disk Format(ext4)
+#  filesystem: fstype=ext4 dev={{ partition }}
+#- name: New Disk Mount
+#  mount: name={{ mountDir }} src={{ partition }} fstype=ext4 state=mounted
+
+# 修改主机名
+- name: Change Hostname
+  hostname: name={{ hostName }}
+  sudo: yes
+
+# 获取外网地址
+- name: Get IP-addr
+  shell: echo "$(curl members.3322.org/dyndns/getip 2>/dev/null)" > /etc/wan
+
+# 创建目录
+- name: Create PATH
+  file: path={{ item }} state=directory owner=root group=root mode=0755
+  with_items:
+  - /data/svndata
+  - /monitor
+  - /fw
+  - /data/corefile
+  notify:
+  - link svndata
+  - link data
+
+# 配置管理员环境变量
+- name: Configuration Administrator Environment Variables
+  copy: src=../file/profile dest=/etc/profile owner=root group=root mode=644 backup=yes
+
+# 更换软件源
+- name: update mirrors
+  template: src=sources.list.j2 dest=/etc/apt/sources.list owner=root group=root mode=644
+
+# 安装软件
+- include: install_soft.yml
+
+# 安装jdk1.7
+- name: Install jdk
+  copy: src=../file/jdk.tar.bz2 dest=/opt/jdk.tar.bz2 owner=root group=root mode=644
+  notify:
+  - Java Environment
+
+# 允许普通用户使用iptables-save
+- name: change iptables-save p
+  raw: chmod +s /sbin/iptables-save
+  sudo: yes
+
+# 配置防火墙
+- name: Conf firewall
+  copy: src=../file/iptables dest=/fw/iptables owner=root group=root mode=755
+
+# 简单安全设置
+- name: Safe setting
+  file: path={{ item }} owner=root group=root mode=4755
+  with_items:
+  - /usr/bin/strace
+  - /usr/bin/lsof
+  - /bin/netstat
+  - /usr/sbin/tcpdump
+  notify:
+  - Configuration control-alt-delete.conf
+
+# 配置DNS
+- name: DNS conf
+  raw: echo "nameserver 223.5.5.5" >/etc/resolv.conf
+
+# 配置ssh
+- name: ssh conf
+  script: ../file/sshd-for-key.sh
+
+# core file
+- name: core file
+  acl: name=/data/corefile entity={{ item }} etype=user permissions=rwx  state=present default=yes
+  with_items:
+  - ximiYW
+  - ximiDEV
+  notify:
+  - Configuration core pattern
+
+# 添加swap
+- name: add swap
+  script: ../file/swap.sh
+  sudo: yes
+
+# 启动时不清除/tmp目录
+- name: Start system - not clean /tmp
+  lineinfile: dest=/etc/default/rcS regexp='^TMPTIME=0' line='TMPTIME=-1'
+
+# 系统启动项
+- name: rc-init
+  script: ../file/rc-init.sh
+
+# 优化内核参数
+- name: kernel arg
+  copy: src=../file/sysctl.conf dest=/etc/sysctl.conf owner=root group=root mode=644 backup=yes
+  notify:
+  - Configuration sysctl.conf
+
+# 设置时间同步
+- name: Sync time
+  raw: echo '*/5 *   * * *   root    /usr/sbin/ntpdate time1.aliyun.com' >> /etc/crontab
+
+# 清理临时文件
+- name: Clean tmp file
+  raw: cd /tmp && rm -rf automount_data_block.sh sshd-for-key.sh zabbix.deb 6379.conf *.iptables oldhistory redis-3.0.4.tar.gz
+
+# 初始化完成

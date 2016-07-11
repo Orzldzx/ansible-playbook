@@ -1,0 +1,28 @@
+---
+
+- name: link svndata
+  file: src=/data/svndata dest=/svndata state=link
+  sudo: yes
+
+- name: link data
+  file: src=/data dest=/alidata1 state=link
+  sudo: yes
+
+- name: start rsync --daemon
+  shell: rsync --daemon
+  sudo: yes
+
+- name: Configuration control-alt-delete.conf
+  lineinfile: dest=/etc/init/control-alt-delete.conf regexp='^exec' line='#exec shutdown -r now "Control-Alt-Delete pressed"'
+  sudo: yes
+
+- name: Configuration core pattern
+  shell: echo "/data/corefile/core-%e-%p-%t" > /proc/sys/kernel/core_pattern
+  sudo: yes
+
+- name: Configuration sysctl.conf
+  shell: /sbin/sysctl -p > /dev/null
+  sudo: yes
+
+- name: Java Environment
+  script: ../file/java-env.sh
