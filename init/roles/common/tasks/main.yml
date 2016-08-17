@@ -62,9 +62,9 @@
 - name: Configuration Administrator Environment Variables
   copy: src=../file/profile dest=/etc/profile owner=root group=root mode=644 backup=yes
 
-## 更换软件源
-#- name: update mirrors
-#  template: src=sources.list.j2 dest=/etc/apt/sources.list owner=root group=root mode=644
+# 更换软件源
+- name: update mirrors
+  template: src=sources.list.j2 dest=/etc/apt/sources.list owner=root group=root mode=644
 
 # 安装软件
 - include: install_soft.yml
