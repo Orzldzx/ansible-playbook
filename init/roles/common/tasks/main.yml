@@ -3,7 +3,7 @@
 # 修改shell环境
 - name: Edit shell environment
   raw: rm -f /bin/sh && ln -s /bin/bash /bin/sh
-#  sudo: yes
+  sudo: yes
 
 # 新建用户
 - name: Add User
@@ -40,7 +40,7 @@
 # 修改主机名
 - name: Change Hostname
   hostname: name={{ hostName }}
-#  sudo: yes
+  sudo: yes
 
 # 获取外网地址
 - name: Get IP-addr
@@ -78,7 +78,7 @@
 # 允许普通用户使用iptables-save
 - name: change iptables-save p
   raw: chmod +s /sbin/iptables-save
-#  sudo: yes
+  sudo: yes
 
 # 配置防火墙
 - name: Conf firewall
@@ -96,8 +96,8 @@
   - Configuration control-alt-delete.conf
 
 # 配置DNS
-#- name: DNS conf
-#  raw: echo "nameserver 223.5.5.5" >/etc/resolv.conf
+- name: DNS conf
+  raw: echo "nameserver 223.5.5.5" >/etc/resolv.conf
 
 # 配置ssh
 - name: ssh conf
@@ -131,9 +131,9 @@
   notify:
   - Configuration sysctl.conf
 
-## 设置时间同步
-#- name: Sync time
-#  raw: echo '*/5 *   * * *   root    /usr/sbin/ntpdate time1.aliyun.com' >> /etc/crontab
+# 设置时间同步
+- name: Sync time
+  raw: echo '*/5 *   * * *   root    /usr/sbin/ntpdate time1.aliyun.com' >> /etc/crontab
 
 # 清理临时文件
 - name: Clean tmp file

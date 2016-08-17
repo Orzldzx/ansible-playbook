@@ -2,22 +2,22 @@
 
 - name: link svndata
   file: src=/data/svndata dest=/svndata state=link
-#  sudo: yes
+  sudo: yes
 
 - name: link data
   file: src=/data dest=/alidata1 state=link
-#  sudo: yes
+  sudo: yes
 
 - name: update configure rsync
   copy: src=../file/rsyncd.conf dest=/etc/rsyncd.conf mode=0644 backup=yes
 
 - name: start rsync --daemon
   shell: rsync --daemon
-#  sudo: yes
+  sudo: yes
 
 - name: Configuration control-alt-delete.conf
   lineinfile: dest=/etc/init/control-alt-delete.conf regexp='^exec' line='#exec shutdown -r now "Control-Alt-Delete pressed"'
-#  sudo: yes
+  sudo: yes
 
 - name: Configuration core pattern
   shell: echo "/data/corefile/core-%e-%p-%t" > /proc/sys/kernel/core_pattern
