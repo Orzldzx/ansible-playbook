@@ -14,7 +14,7 @@
   raw: tar xf /opt/mongodb-3.0.6.tgz -C /opt && mv /opt/mongodb-linux-x86_64-ubuntu1204-3.0.6 /opt/mongodb
 
 - name: Environment mongodb
-  raw: echo "PATH=$PATH:/opt/mongodb/bin" >> /etc/profile && . /etc/profile
+  raw: echo "PATH=$PATH:/opt/mongodb/bin" >> /etc/profile && source /etc/profile
 
 - name: ADD permission to use
   raw: echo "rs.slaveOk();" >> /root/.mongorc.js
@@ -24,6 +24,7 @@
 
 - name: Change mongodb acl
   acl: name=/opt/mongodb/bin/mongo entity=zabbix etype=user permissions="rwx" state=present
+  ignore_errors: True
 
 - name: Create mongodb worker datadir
   file: path={{ item }} state=directory

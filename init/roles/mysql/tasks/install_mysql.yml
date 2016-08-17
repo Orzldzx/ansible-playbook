@@ -80,8 +80,8 @@
 - name: Get the current master servers replication status
   mysql_replication: login_user=root
                      login_password={{ mysql_root_pass }}
-                     login_host={{ redis_master_source }}
-                     login_port={{ redis_master_port }}
+                     login_host={{ mysql_master_source }}
+                     login_port={{ mysql_master_port }}
                      login_unix_socket='/var/run/mysqld/mysqld.sock'
                      mode=getmaster
   register: repl_stat
@@ -93,10 +93,11 @@
                      login_port={{ mysql_slave_port }}
                      mode=changemaster
                      master_host={{ mysql_master_source }}
+                     master_port={{ mysql_master_port }}
+                     master_user={{ mysql_users[0].name }}
+                     master_password={{ mysql_users[0].pass }}
                      master_log_file={{ repl_stat.File }}
                      master_log_pos={{ repl_stat.Position }}
-                     master_user={{ mysql_users[3].name }}
-                     master_password={{ mysql_users[3].pass }}
   ignore_errors: True
   when: hostType == "mysql_slave"
 

@@ -1,9 +1,9 @@
 ---
 # 安装软件
 
-## 更新系统软件
-#- name: Update system software
-#  apt: update_cache=yes cache_valid_time=180 upgrade=dist
+# 更新系统软件
+- name: Update system software
+  apt: update_cache=yes cache_valid_time=180 upgrade=dist
 
 # 安装必要软件
 - name: Install software

@@ -4,25 +4,25 @@ jumpuser: jumpser
 rootuser: root
 
 # zabbix
-zabbixServer: 120.92.226.38
+zabbixServer: xx.xxx.x.xx
 
 # mongodb
-mongo_master_source: 192.168.7.111
+mongo_master_source: 172.31.13.103
 mongo_master_port: 27017
-mongo_slave_source: 192.168.7.111
+mongo_slave_source: 172.31.2.214
 mongo_slaver_port: 27017
 
 # redis
-redis_master_source: 192.168.7.111
+redis_master_source: 172.31.13.102
 redis_master_port: 6379
-redis_slave_source: 192.168.7.113
+redis_slave_source: 172.31.2.214
 redis_slave_port: 6379
 
 # mysql
 mysql_root_pass: XimiMsat19292014
-mysql_master_source: 192.168.7.111
+mysql_master_source: 172.31.13.103
 mysql_master_port: 3306
-mysql_slave_source: 192.168.7.113
+mysql_slave_source: 172.31.2.214
 mysql_slave_port: 3306
 mysql_users:
 - { name: "root", pass: "XimiMsat19292014", priv: "*.*:ALL", host: "%" }

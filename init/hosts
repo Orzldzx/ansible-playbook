@@ -1,5 +1,28 @@
 # 主机名(ip地址|主机名)  必要变量:(hostName|hostType) 可选变量:(mysql_id)
 
-[aaa]
-192.168.7.111 hostName=ansible-test1 ansible_ssh_port=13021 ansible_ssh_private_key_file=/mnt/playbooks/ksyun-key hostType=mysql_master mysql_id=100
-192.168.7.113 hostName=ansible-test2 ansible_ssh_port=13021 ansible_ssh_private_key_file=/mnt/playbooks/ksyun-key hostType=mysql_slave  mysql_id=101
+[init]
+172.31.13.101 hostName=slots-srv-1 ansible_ssh_port=22 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_master mysql_id=100
+172.31.13.102 hostName=slots-srv-2 ansible_ssh_port=22 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_master mysql_id=100
+172.31.13.103 hostName=slots-srv-3 ansible_ssh_port=22 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_master mysql_id=101
+172.31.2.214  hostName=slots-bak-1 ansible_ssh_port=22 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_slave mysql_id=102
+
+[mysql]
+172.31.13.103 hostName=slots-srv-3 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_master mysql_id=101
+172.31.2.214  hostName=slots-bak-1 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mysql_slave mysql_id=102
+
+[mongo]
+172.31.13.103 hostName=slots-srv-3 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mongo_master
+172.31.2.214  hostName=slots-bak-1 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=mongo_slave
+
+[redis]
+172.31.13.102 hostName=slots-srv-2 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=redis_master
+172.31.2.214  hostName=slots-bak-1 ansible_ssh_port=13021 ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key hostType=redis_slave
+
+[all]
+172.31.13.101
+172.31.13.102
+172.31.13.103
+172.31.2.214
+[all:vars]
+ansible_ssh_port=13021
+ansible_ssh_private_key_file=/git/iniplay/init/ksyun-key

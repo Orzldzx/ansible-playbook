@@ -65,13 +65,14 @@ start_to_all(){
     iptables -A INPUT -m addrtype --dst-type MULTICAST -j ACCEPT
     iptables -A INPUT -p esp -j ACCEPT
     iptables -A INPUT -p ah -j ACCEPT
-    iptables -A INPUT -s xx.138.102.x -j ACCEPT
-    iptables -A INPUT -s 192.168.7.0/32 -j ACCEPT
-    iptables -A INPUT -s 10.0.0.0/8 -j ACCEPT
+    iptables -A INPUT -s 182.138.102.186 -j ACCEPT
+    iptables -A INPUT -s 172.0.0.0/8 -j ACCEPT
+    iptables -A INPUT -s 120.92.226.38 -j ACCEPT
 
     # filter表
     ## 开放端口
-#    iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport $SSHPort -j ACCEPT
+    iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 13021 -j ACCEPT
+    iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
 
     ## 过滤关键字
     # iptables -A {INPUT,OUTPUT,FORWARD} -p {tcp,udp} -{s,d} 源地址|目的地址 --{dport,sport} 端口号 -m string --string "/abc/def" -algo {bm,kmp} -j DROP

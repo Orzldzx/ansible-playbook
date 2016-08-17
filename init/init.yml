@@ -1,19 +1,32 @@
 ---
 
-- hosts: aaa
+- hosts: init
   vars:
-    key1: vars1
-    key2: vars2
-  remote_user: ximi
+    disk: /dev/xvdb
+    partition: /dev/xvdb1
+    mountDir: /data
+  remote_user: root
 #  gather_facts: False
-  sudo: yes
+#  sudo: yes
   roles:
   - { role: common, tags: [ "common" ] }
 
-- hosts: aaa
+- hosts: zabbix
   remote_user: root
   roles:
   - { role: zabbix, tags: [ "zabbix" ] }
+
+- hosts: mysql
+  remote_user: root
+  roles:
   - { role: mysql, tags: [ "mysql" ] }
-  - { role: redis, tags: [ "redis" ] }
+
+- hosts: mongo
+  remote_user: root
+  roles:
   - { role: mongo, tags: [ "mongo" ] }
+
+- hosts: redis
+  remote_user: root
+  roles:
+  - { role: redis, tags: [ "redis" ] }

@@ -3,7 +3,7 @@
 # 修改shell环境
 - name: Edit shell environment
   raw: rm -f /bin/sh && ln -s /bin/bash /bin/sh
-  sudo: yes
+#  sudo: yes
 
 # 新建用户
 - name: Add User
@@ -29,22 +29,22 @@
                   path=/root/.ssh/authorized_keys manage_dir=no
 
 # "$
-# 初始化磁盘
+## 初始化磁盘
 #- name: New Disk Partition
 #  script: ../script/disk.sh {{ disk }}
 #- name: New Disk Format(ext4)
-#  filesystem: fstype=ext4 dev={{ partition }}
+#  filesystem: fstype=ext4 dev={{ partition }} force=yes
 #- name: New Disk Mount
 #  mount: name={{ mountDir }} src={{ partition }} fstype=ext4 state=mounted
 
 # 修改主机名
 - name: Change Hostname
   hostname: name={{ hostName }}
-  sudo: yes
+#  sudo: yes
 
 # 获取外网地址
 - name: Get IP-addr
-  shell: echo "$(curl members.3322.org/dyndns/getip 2>/dev/null)" > /etc/wan
+  shell: echo "$(curl ifconfig.io 2>/dev/null)" > /etc/wan
 
 # 创建目录
 - name: Create PATH
@@ -62,23 +62,23 @@
 - name: Configuration Administrator Environment Variables
   copy: src=../file/profile dest=/etc/profile owner=root group=root mode=644 backup=yes
 
-# 更换软件源
-- name: update mirrors
-  template: src=sources.list.j2 dest=/etc/apt/sources.list owner=root group=root mode=644
+## 更换软件源
+#- name: update mirrors
+#  template: src=sources.list.j2 dest=/etc/apt/sources.list owner=root group=root mode=644
 
 # 安装软件
 - include: install_soft.yml
 
 # 安装jdk1.7
-- name: Install jdk
-  copy: src=../file/jdk.tar.bz2 dest=/opt/jdk.tar.bz2 owner=root group=root mode=644
-  notify:
-  - Java Environment
+#- name: Install jdk
+#  copy: src=../file/jdk.tar.bz2 dest=/opt/jdk.tar.bz2 owner=root group=root mode=644
+#  notify:
+#  - Java Environment
 
 # 允许普通用户使用iptables-save
 - name: change iptables-save p
   raw: chmod +s /sbin/iptables-save
-  sudo: yes
+#  sudo: yes
 
 # 配置防火墙
 - name: Conf firewall
@@ -86,7 +86,7 @@
 
 # 简单安全设置
 - name: Safe setting
-  file: path={{ item }} owner=root group=root mode=4755
+  file: path={{ item }} owner=root group=root mode=4644
   with_items:
   - /usr/bin/strace
   - /usr/bin/lsof
@@ -96,8 +96,8 @@
   - Configuration control-alt-delete.conf
 
 # 配置DNS
-- name: DNS conf
-  raw: echo "nameserver 223.5.5.5" >/etc/resolv.conf
+#- name: DNS conf
+#  raw: echo "nameserver 223.5.5.5" >/etc/resolv.conf
 
 # 配置ssh
 - name: ssh conf
@@ -131,9 +131,9 @@
   notify:
   - Configuration sysctl.conf
 
-# 设置时间同步
-- name: Sync time
-  raw: echo '*/5 *   * * *   root    /usr/sbin/ntpdate time1.aliyun.com' >> /etc/crontab
+## 设置时间同步
+#- name: Sync time
+#  raw: echo '*/5 *   * * *   root    /usr/sbin/ntpdate time1.aliyun.com' >> /etc/crontab
 
 # 清理临时文件
 - name: Clean tmp file
