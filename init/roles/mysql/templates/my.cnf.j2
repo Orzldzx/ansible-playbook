@@ -5,6 +5,7 @@ port        = {{ mysql_master_port }}
 port        = {{ mysql_slave_port }}
 {% endif %}
 socket      = /var/run/mysqld/mysqld.sock
+default-character-set   = utf8
 
 [mysqld]
 user        = mysql
@@ -18,6 +19,11 @@ port        = {{ mysql_slave_port }}
 basedir     = /usr
 datadir     = {{ mysql_datadir }}
 tmpdir      = /tmp
+
+#-------
+
+# 字符集
+character-set-server    = utf8
 
 #-------
 
@@ -62,6 +68,7 @@ quote-names
 max_allowed_packet  = 16M
 
 [mysql]
+default-character-set   = utf8
 
 [isamchk]
 key_buffer      = 16M
