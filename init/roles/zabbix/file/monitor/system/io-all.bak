@@ -5,9 +5,13 @@
 
 DISK=($(awk '/vd[a-z]$/ {print $NF}' /proc/partitions))
 DiskName=()
-
-for ((i=0;i<=${#DISK};i++)); do
-    DiskName[i]=$(df|awk '/'"${DISK[i]}"'/ {print $NF}')
+for(( i=0;i<${#DISK[@]};i++))
+do
+	dev=${DISK[$i]}
+	vg=$(sudo /sbin/pvdisplay|grep -A 1 $dev 2>/dev/null|awk '/VG Name/ {print $3}')
+	lv=$(sudo /sbin/lvdisplay |grep -B 1 $vg 2>/dev/null|awk '/LV Name/ {print $3}')
+	lv=${lv##*/}
+	DiskName[$i]=$(df|grep $lv 2>/dev/null|awk '{print $NF}')
 done
 
 Device()
@@ -17,6 +21,7 @@ Device()
 	for(( i=0;i<${#DISK[@]};i++))
 	do
 		num=$(echo $((${#DISK[@]}-1 )))
+		[[ ! -n ${DiskName[$i]} ]] && continue
 		if [[ "$i" -ne ${num} ]];then
 			printf "\t\t{\n"
 			printf "\t\t  \"{#DISK}\":\"${DISK[$i]}\",\"{#DISKNAME}\":\"${DiskName[$i]}\"},\n"
@@ -38,12 +43,12 @@ case "$1" in
 	READ)
 		t=$(iostat -kx 1 2| awk '{if($1 == "'$2'") print $6}'|tail -1)
                 result=$(echo "$t * 1024" |bc)
-                printf "%.f\n" $result
+                echo $result
                 ;;
 	WRITE)
 		t=$(iostat -kx 1 2| awk '{if($1 == "'$2'") print $7}'|tail -1)
                 result=$(echo "$t * 1024" |bc)
-                printf "%.f\n" $result
+                echo $result
                 ;;
 	CHECK)
 		for ((i=0;i<${#DISK[@]};i++))
