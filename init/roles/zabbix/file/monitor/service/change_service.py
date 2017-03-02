@@ -47,6 +47,7 @@ with open('list.txt') as f:
     for line in f.readlines():
         l = line.split()
         if l[0][0] != '#':
+            print l
             if l[1] in srv:
                 num = len(srv[l[1]])
                 srv[l[1]].append([l[3], srv[l[1]][num - 1][1] + 1])

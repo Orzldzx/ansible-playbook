@@ -11,11 +11,11 @@
   remote_user: root
   synchronize: src=../file/monitor/ dest=/monitor/ delete=yes perms=yes
 
-    #- name: Configure mysql
-    #  template: src=userparameter_mysql.conf.j2 dest=/etc/zabbix/zabbix_agentd.d/userparameter_mysql.conf
-
 - name: Configure file
   template: src=zabbix_agentd.conf.j2 dest=/etc/zabbix/zabbix_agentd.conf
+
+- name: ADD templates
+  copy: src=../file/1un.conf dest=/etc/zabbix/zabbix_agentd.d/work.conf
   notify:
   - start zabbix client
   - Clear tmpfile

@@ -3,7 +3,7 @@
 # 2015-10-20
 # 检查网络
 
-Stat=$(dig +short www.sina.com|wc -c)
+Stat=$(dig +short www.google.com|wc -c)
 
 if [[ $Stat > 0 ]]; then
     echo 1

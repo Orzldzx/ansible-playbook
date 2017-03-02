@@ -1,12 +1,12 @@
 #!/bin/bash
 # 1un
-# 2016-02-01 -update
+# 2016-08-26 -update
 # zabbix自动发现服务项,监控服务各项状态
 
-[ ! -s /svndata/svr/mod.txt ] && echo 1 && exit
+#[ ! -s /svndata/svr/mod.txt ] && echo 1 && exit
 
 SerName(){
-    Ser=($(cat /svndata/svr/mod.txt  |awk '{print $1}'))
+    Ser=($(sudo supervisorctl status |awk '{print $1}'))
     printf '{\n'
     printf '\t"data": [\n'
     for((i=0;i<${#Ser[@]};++i))
@@ -85,7 +85,12 @@ GetValue(){
 }
 
 GetStatus(){
-    num=$(ps -ef|grep $1|awk '{if($3==1)print}'|wc -l)
+    stats=$(sudo supervisorctl status $1|awk '{print $2}')
+    if [[ $stats == "RUNNING" ]]; then
+        num=1
+    else
+        num=0
+    fi
     echo $num
 }
 

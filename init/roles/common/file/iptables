@@ -71,7 +71,6 @@ start_to_all(){
 
     # filter表
     ## 开放端口
-    iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 13021 -j ACCEPT
     iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
 
     ## 过滤关键字

@@ -10,7 +10,9 @@ hour=$(date -d '-1 hour' +%H)
 hour_old=$(date -d '-2 hour' +%H)
 size=
 
-MongoMs=$(grep -c ^master /etc/mongod*.conf)
+test -e /usr/local/bin/redis-cli || { echo 0 ; exit 0; }
+
+MongoMs=$(grep -c ^master /etc/mongodb/mongod*.conf)
 RedisMs=$(redis-cli info|grep -c ^role:master)
 [[ ${MongoMs} > 0 || ${RedisMs} > 0 ]] && echo 0 && exit
 
@@ -51,6 +53,7 @@ check_log(){	#对比大小
 
 while read line_name line_port	#大小小于0则+n
 do
+
     check_log ${line_name} ${line_port}
     if [[ ${size} -lt "-52428800" || ${size} -gt "52428800" ]]; then
         case ${line_name} in

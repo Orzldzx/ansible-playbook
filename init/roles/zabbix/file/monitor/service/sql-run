@@ -6,12 +6,12 @@
 tmpfile=/tmp/sql.tmp
 [ ! -s $tmpfile ] && touch $tmpfile
 
-MyUser=view
-MyPass=0528ximi2014
+MyUser="Your username"
+MyPass="Your password"
 
 DB=()
 [ $(which redis-server|wc -l) -eq 1 ] && DB[0]=redis
-[ $(which mongod|wc -l) -eq 1 ] && DB[1]=mongo
+[ $(sudo ls /opt/mongodb/bin/mongod 2>/dev/null|wc -l) -eq 1 ] && DB[1]=mongo
 [ $(which mysqld|wc -l) -eq 1 ] && DB[2]=mysql
 
 Help(){ echo "Usage:$0 { SQL | GetStatus [name] [port] | Slave [name] [port] }" ; }
@@ -21,7 +21,7 @@ SQL_INFO(){
 
     for sql in $(echo ${DB[@]})
     do
-        for port in $(netstat -tlnp|grep -v ^...6|grep $sql|awk -F: '{print $2}'|awk '{print $1}')
+        for port in $(sudo netstat -tlnp|grep -v ^...6|grep $sql|awk -F: '{print $2}'|awk '{print $1}')
         do
             printf "%-20s%-s\n" "$sql" "$port" >> $tmpfile
         done
@@ -64,7 +64,7 @@ case $1 in
 		[ -z "$stat" ] && echo 0 || echo 1
 		;;
 	    mongo)
-		stat=$(echo "db.serverStatus()"|mongo 127.0.0.1:${3}/test 2>/dev/null|grep ok)
+		stat=$(echo "db.serverStatus()"|sudo /opt/mongodb/bin/mongo 127.0.0.1:${3}/test 2>/dev/null|grep ok)
 		[ -z "$stat" ] && echo 0 || echo 1
 		;;
 	    redis)
@@ -91,8 +91,8 @@ case $1 in
 		[ "$stat" = "up" ] && echo 1 || echo 0
 		;;
 	    mongo)
-		[[ $(grep ^master /etc/mongod.conf|wc -l) > 0 ]] && echo 1 && exit
-		state="$(mongo 127.0.0.1:${3}/test --eval "db.printSlaveReplicationInfo()" 2>/dev/null)"
+		[[ $(grep ^master /etc/mongodb/mongod.conf|wc -l) > 0 ]] && echo 1 && exit
+		state="$(sudo /opt/mongodb/bin/mongo 127.0.0.1:${3}/test --eval "db.printSlaveReplicationInfo()" 2>/dev/null)"
 		echo $state > /tmp/slaveR.txt
 		num=$(awk '{print $18}' /tmp/slaveR.txt)
 		[[ $num -lt 3600 ]] && echo 1 || echo 0

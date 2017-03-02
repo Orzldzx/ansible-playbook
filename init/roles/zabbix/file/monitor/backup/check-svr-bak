@@ -2,46 +2,28 @@
 # liuliqiao
 # 2015-11-30
 
-[[ -d /svndata/svr ]] || { echo 1; exit; }
+[[ -d /svndata/games || -d /svndata/services ]] || { echo 1; exit; }
 
-if [[ "$1" = "conf" ]]; then	#备份配置文件
-	time=$(date +%m%d_%H)
-	mkdir -p /bakcfg/conf."$time"_bak
-	rsync --port 1888 --bwlimit=20000 --delete --exclude=log/ --exclude=core -avz /svndata/svr/config/ /bakcfg/conf."$time"_bak
-	for i in $(find /bakcfg/ -maxdepth 1 -type d -mtime +7|grep -v ^\/bakcfg\/$ )
-        do 
-            echo $i
-            rm -rf $i
-        done
-
-elif [[ "$1" = "bak" ]]; then	#回滚方式备份
-	time=$(date +%y%m%d-%H%M%S)
-	[ -d /alidata1/Go_back ] || mkdir -p /alidata1/Go_back
-	rsync --port 1888 --bwlimit=20000 --delete --exclude=log/ --exclude=core -avz /svndata/ /alidata1/Go_back/svndata.${time}.ver
-	if [ $(ls -Al /alidata1/Go_back|wc -l) -gt 6 ];then
-	    line=$(ls /alidata1/Go_back|sort -n|head -1)
-	    rm -rf /alidata1/Go_back/$line
-	fi
+if [[ "$1" = "bak" ]]; then	#回滚方式备份
+    time=$(date +%y%m%d-%H%M%S)
+    [ -d /data/Go_back ] || mkdir -p /data/Go_back
+    rsync --port 1888 --bwlimit=20000 --delete --exclude=.svn --exclude=log/ --exclude=core -avz /svndata/ /data/Go_back/svndata.${time}.ver
+    if [ $(ls -Al /data/Go_back|wc -l) -gt 6 ];then
+        line=$(ls /data/Go_back|sort -n|head -1)
+        rm -rf /data/Go_back/$line
+    fi
 
 elif [[ "$1" = "check" ]]; then	#检查备份是否成功
-	cd /bakcfg/ 
-	time=$(date +"%m%d_05")
-	newsize=$(du -sb "svndata."$time"_bak" |awk '{print $1}')
-	oldtime=$(date -d '-1 day' +"%m%d_05")
-	oldsize=$(du -sb "svndata."$oldtime"_bak" |awk '{print $1}')
-	size=$((${newsize}-${oldsize}))
-	if [ $size -ge -20000000  -a  $size -le 20000000 ]
+    cd /data/Go_back
+    time=$(date +%y%m%d)
+    newsize=$(du -sb svndata.${time}* |awk '{print $1}')
+    oldtime=$(date -d '-1 day' +%y%m%d)
+    oldsize=$(du -sb svndata.${oldtime}* |awk '{print $1}')
+    size=$((${newsize}-${oldsize}))
 
-	then
-       		echo 1
-	else
-        	echo 0
-	fi
-
-else	#完整备份
-	time=$(date +"%m%d_05")
-	mkdir -p /bakcfg/svndata."$time"_bak
-	rsync --port 1888 --bwlimit=20000 --delete --exclude=log --exclude=core -avz /svndata/ /bakcfg/svndata."$time"_bak
-	rm -rf /bakcfg/svndata.$(date -d '-6 day' +%m%d)_*
+    if [ $size -ge -20000000  -a  $size -le 20000000 ]; then
+        echo 1
+    else
+        echo 0
+    fi
 fi
-

@@ -15,20 +15,20 @@ xtrabackup=$(which innobackupex)
 email=/monitor/mail/sendEmail
 
 #帐号
-user=
+user=root
 password=
 mail_user=texas_ximi@aliyun.com
 mail_pass=
 mail_smtp=smtp.mail.aliyun.com
 
 #备份目录
-backup_path=/alidata1/xtrabackup/data
-backup_tar_path=/alidata1/xtrabackup/tar
+backup_path=/data/xtrabackup/data
+backup_tar_path=/data/xtrabackup/tar
 backup_log=/var/log/xtrabackup.log
 
 #配置文件
 conf=/etc/mysql/my.cnf
-socket=/var/run/mysqld/mysqld3306.sock
+socket=/var/run/mysqld/mysqld.sock
 
 #返回值
 # 1     有进程存在
@@ -67,7 +67,8 @@ inc_backup(){
         cd ${backup_path}/
         tar zcf ${backup_tar_path}/${date}/${now}_inc.tgz ${now}
     else
-        error2
+#        error2
+        echo "backup false!!"
     fi
 }
 

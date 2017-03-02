@@ -22,13 +22,12 @@ do
 
     tar acf $baknow/$date/$backupname.tgz dump.rdb
     if [ "$?" == "0" ]; then
-        cd $baknow/$date
         echo -e "${now_time}\tfilename:$backupname.tgz\tsize+`du -sb $backupname.tgz|cut -f1`+\tbackup success!" >> ../redis-server.log
         md5sum $backupname.tgz >> ../md5sum.log
     else
         echo -e "${now_time}\t$(hostname)\tredis\t backup\t+failed!+" >> ../redis-server.log
     fi
-    rm -rf $(date -d '-3 day' +%F)
+    rm -rf $port/$(date -d '-3 day' +%F)
     sleep 10
 done
 
