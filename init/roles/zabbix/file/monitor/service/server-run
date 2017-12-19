@@ -1,12 +1,12 @@
 #!/bin/bash
 # 1un
-# 2016-08-26 -update
+# 2017-12-19 -update (更新进程tcp监控)
 # zabbix自动发现服务项,监控服务各项状态
 
 #[ ! -s /svndata/svr/mod.txt ] && echo 1 && exit
 
 SerName(){
-    Ser=($(sudo supervisorctl status |awk '{print $1}'))
+    Ser=($(supervisorctl status 2> /dev/null | awk '{print $1}') supervisord)
     printf '{\n'
     printf '\t"data": [\n'
     for((i=0;i<${#Ser[@]};++i))
@@ -21,10 +21,15 @@ SerName(){
             printf "\t\t\t\"{#SITENAME}\":\"${Ser[$num]}\"}\n\t\t]\n}\n"
         fi
     }
+    if [[ ${#Ser[@]} -eq 0 ]]; then
+        printf "\t\t]\n}\n"
+    fi
 }
 
 GetValue(){
-    PID=$(pgrep ${1:0:15})
+
+    PNAME=${1%_*}
+    PID=$(pgrep ${PNAME:0:15})
 
     GetMem(){
         MEMUsage=$(ps -o rsz -p $1|grep -v RSZ)
@@ -47,11 +52,11 @@ GetValue(){
         fi
         ETIMEUsage=$(echo $ETIME|cut -d: -f1|awk -F'-' '{print $1"*24+"$2}'|bc)
         echo $ETIMEUsage
-	}
+    }
     GetPsCpu(){
         CPUUsage=$(ps -o pcpu -p $1|grep -v CPU)
-	echo $CPUUsage
-        }
+        echo $CPUUsage
+    }
 
     case $2 in
     cpu)
@@ -79,32 +84,57 @@ GetValue(){
         echo $etime_usage
         ;;
     *)
-        echo "Wrong"
+        echo "Usage: $0 GetValue $1 [ cpu | mem | vsz | swap | etime ]"
         ;;
     esac
 }
 
 GetStatus(){
-    stats=$(sudo supervisorctl status $1|awk '{print $2}')
-    if [[ $stats == "RUNNING" ]]; then
-        num=1
+    if [[ $1 == "supervisord" ]]; then
+        num=$(pgrep supervisord | wc -l)
     else
-        num=0
+        stats=$(supervisorctl status $1|awk '{print $2}')
+        if [[ $stats == "RUNNING" ]]; then
+            num=1
+        else
+            num=0
+        fi
     fi
     echo $num
 }
 
-case "$1" in
-SerName)
-    SerName
-    ;;
-GetValue)
-    GetValue $2 $3
-    ;;
-GetStatus)
-    GetStatus $2
-    ;;
+GetTCP(){
+    PNAME=${1%_*}
+    tcp=${2:-99999}
+    state=(established syn-sent syn-recv fin-wait-1 fin-wait-2 time-wait closed close-wait last-ack listen closing)
+
+    if [[ "X$2" == "Xall" ]]; then
+        port=$(/sbin/ss -tlnp | awk '$6 ~ /'""$PNAME""'/ {print $4}')
+        num=$(/sbin/ss -t -o state all sport = $port | grep -v '^Recv-Q' | wc -l)
+    elif [[ "$(echo ${state[@]} | grep -c $tcp)"  -gt 0 ]]; then
+        port=$(/sbin/ss -tlnp | awk '$6 ~ /'""$PNAME""'/ {print $4}')
+        num=$(/sbin/ss -t -o state $2 sport = $port | grep -v '^Recv-Q' | wc -l)
+    else
+        echo "Usage: $0 GetTCP $1 [ established | syn-sent | syn-recv | fin-wait-1 | fin-wait-2 | time-wait | closed | close-wait | last-ack | listen | closing ]"
+    fi
+
+    echo $num
+}
+
+case "$1" in    # opt
+    SerName)
+        SerName # list
+        ;;
+    GetValue)   # sername type
+        GetValue $2 $3
+        ;;
+    GetStatus)  # sername
+        GetStatus $2
+        ;;
+    GetTCP)     # sername type
+        GetTCP $2 $3
+        ;;
 *)
-    echo "Usage:$0 { SerName | GetValue [SerName] [type] | GetStatus [SerName] }"
+    echo "Usage:$0 { SerName | GetValue [SerName] [type] | GetTCP [SerName] [type] | GetStatus [SerName] }"
     ;;
 esac
