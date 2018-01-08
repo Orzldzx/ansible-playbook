@@ -84,17 +84,25 @@ start_to_all(){
 
 ### -------------------
 
-    # NAT表
-    # IP=ip地址, PORT=端口, D-IP=目的地址, D-PORT=目的端口 S-IP=源ip地址, L-IP=本地出口ip地址(可能是内网地址也可能是外网地址)
-    ## 转发端口
-#    iptables -t nat -A PREROUTING -p tcp -m tcp --dport D-PORT -j REDIRECT --to-ports D-PORT
+    ### NAT表
+    # IP=ip地址
+    # PORT=端口
+    # D-IP=目的地址
+    # D-PORT=目的端口
+    # S-IP=源ip地址
+    # L-IP=本地出口ip地址(可能是内网地址也可能是外网地址)
+    # F-IP=转发目的地址
+    # F-PORT=转发目的端口
+
+    ## 转发端口(本地)
+#    iptables -t nat -A PREROUTING -p tcp -m tcp --dport <D-PORT> -j REDIRECT --to-ports <F-PORT>
 
     ## 转发ip && 端口
-#    iptables -t nat -A PREROUTING -p tcp --dport D-PORT -j DNAT --to-destination D-IP:D-PORT
-#    iptables -t nat -A POSTROUTING -d D-PORT -j SNAT --to L-IP
+#    iptables -t nat -A PREROUTING -p tcp --dport <D-PORT> -j DNAT --to-destination <F-IP>:<F-PORT>
+#    iptables -t nat -A POSTROUTING -d <F-IP> -p tcp -m tcp --dport <F-PORT> -j SNAT --to <L-IP>
 
     ## 通过设备转发端口
-#    iptables -t nat -A POSTROUTING -o eth0 -p tcp -j SNAT --to-source L-IP
+#    iptables -t nat -A POSTROUTING -o eth0 -p tcp -j SNAT --to-source <L-IP>
 }
 
 # 查看状态
