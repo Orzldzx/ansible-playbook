@@ -1,0 +1,4 @@
+---
+
+- name: Delete package
+  shell: chdir=/tmp/ rm -f jdk-8u152-linux-x64.rpm

@@ -1,0 +1,7 @@
+---
+
+- name: enable zabbix agent
+  service: name=zabbix_agentd enabled=yes
+
+- name: start zabbix agent
+  service: name=zabbix_agentd state=started

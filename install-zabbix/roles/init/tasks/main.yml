@@ -1,0 +1,28 @@
+---
+
+- name: "创建用户组"
+  user: name=zabbix state=present
+
+- name: "创建用户"
+  user: name=zabbix shell=/sbin/nologin group=zabbix comment="Zabbix agentd" createhome=no
+
+- name: "创建目录"
+  file: dest={{ item }} owner=zabbix group=zabbix mode=0755 state=directory follow=yes
+  with_items:
+    - /tmp/zabbix
+    - /var/log/zabbix
+
+- name: "配置sudo权限"
+  script: ../files/sudo.sh
+
+- name: "配置swap"
+  script: ../files/swap.sh
+
+#- name: "设置acl权限"
+#  acl: name=/run entry="user:zabbix:rwx" state=present
+
+- name: "传输监控脚本"
+  synchronize: src=../files/monitor dest=/ delete=yes
+
+- name: "传输软件包"
+  copy: src=../files/zabbix-3.4.4.tar.gz dest=/opt/software/

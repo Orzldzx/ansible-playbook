@@ -1,0 +1,14 @@
+[Unit]
+Description=Zabbix proxy server
+Documentation=https://www.zabbix.com/documentation/3.4/zh/manual
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/zabbix/zabbix_proxy.pid
+ExecStart=/usr/local/sbin/zabbix_proxy
+ExecStop=pkill zabbix_proxy
+User=zabbix
+
+[Install]
+WantedBy=multi-user.target

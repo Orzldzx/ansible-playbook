@@ -1,0 +1,4 @@
+---
+
+- name: start saturn-executor
+  shell: bash saturn-executor.sh start -n {{group_names[0]}} -e {{ inventory_hostname }} -env dev chdir=/opt/software/saturn-executor-2.1.4/bin/

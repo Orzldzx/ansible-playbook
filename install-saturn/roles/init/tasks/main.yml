@@ -1,0 +1,9 @@
+---
+
+- name: Copy jdk-8u152 package to server
+  copy: src=../file/jdk-8u152-linux-x64.rpm dest=/tmp/jdk-8u152-linux-x64.rpm
+
+- name: Install jdk-8u152
+  yum:  name=/tmp/jdk-8u152-linux-x64.rpm state=present
+  notify:
+  - Delete package

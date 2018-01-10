@@ -1,0 +1,84 @@
+EnableRemoteCommands=1
+#HostnameItem=system.hostname
+
+# ---------------------------------------------------
+# 发现服务项
+UserParameter=svr.name,sudo /monitor/service/server-run SerName
+
+# 查看内存,cup,交换分区信息   (image)
+UserParameter=svr.status[*],sudo /monitor/service/server-run GetValue $1 $2
+
+# 监控服务运行状态  (image)
+UserParameter=svr.run[*],sudo /monitor/service/server-run GetStatus $1
+
+# 监控服务TCP状态  (image)
+UserParameter=svr.tcp[*],sudo /monitor/service/server-run GetTCP $1 $2
+
+# ---------------------------------------------------
+# 发现 MongoDB 数据库
+UserParameter=MongoDB.name,/monitor/database/mongodb/mongodb_discovery.py
+
+# 监控 MongoDB 数据库
+UserParameter=MongoDB.Status[*],/monitor/database/mongodb/mongodb_status.sh $1 $2 $3 $4
+
+# ---------------------------------------------------
+# 发现 MySQL 数据库
+UserParameter=MySQL.name,sudo /monitor/database/mysql/mysql_discovery.py
+
+# 监控 MySQL 数据库
+UserParameter=MySQL.status[*],/monitor/database/mysql/mysql_status.sh $1 $2
+
+# ---------------------------------------------------
+# 发现 Redis 数据库
+UserParameter=Redis.name,/monitor/database/redis/redis_discovery.py
+
+# 监控 Redis 数据库
+UserParameter=Redis.status[*],/monitor/database/redis/redis_status.sh $1 $2 $3
+
+# ---------------------------------------------------
+# 判断rsync是否运行
+UserParameter=rsync.run,/monitor/service/rsync-run
+
+# ---------------------------------------------------
+# 判断防火墙是否正常
+UserParameter=check.fw,/monitor/net/check-firewall
+
+# ---------------------------------------------------
+# 判断DNS是否可用
+UserParameter=check.dns,/monitor/net/check-dns
+
+# ---------------------------------------------------
+# 检查数据库备份
+UserParameter=bak.db.all,/monitor/backup/check-dbs-bak
+
+# ---------------------------------------------------
+# 获取服务和数据库占用内存总数,百分比   (image)
+UserParameter=used.mem,/monitor/system/used-all-mem
+
+# ---------------------------------------------------
+# 监控服务配置文件备份状态
+UserParameter=bak.svr,/monitor/backup/check-svr-bak check
+
+# ---------------------------------------------------
+# 发现磁盘
+UserParameter=disk.name,sudo /monitor/system/io-all DISK
+
+# 监控磁盘繁忙度        (image)
+UserParameter=disk.io.use[*],sudo /monitor/system/io-all USE $1
+
+# 监控磁盘读            (image)
+UserParameter=disk.io.read[*],sudo /monitor/system/io-all READ $1
+
+# 监控磁盘写            (image) 3个在一张图
+UserParameter=disk.io.write[*],sudo /monitor/system/io-all WRITE $1
+
+# 监控磁盘是否可写
+UserParameter=disk.io.nowrite[*],sudo /monitor/system/io-all CHECK $1
+
+# ---------------------------------------------------
+# 对比时间
+UserParameter=sys.time,/monitor/system/sys-time -H ntp1.cloud.aliyuncs.com -w 0.5|grep -wc OK
+
+# ---------------------------------------------------
+# 监控tcp状态
+UserParameter=net.tcp.status[*],/monitor/net/check-tcp-status $1

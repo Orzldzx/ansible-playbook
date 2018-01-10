@@ -1,0 +1,7 @@
+---
+
+- name:  chmod +x script
+  shell: chdir=/opt/software/xxl-job-admin/bin chmod +x *.sh
+
+- name:  start xxl-job-admin
+  shell: chdir=/opt/software/xxl-job-admin/bin bash startup.sh

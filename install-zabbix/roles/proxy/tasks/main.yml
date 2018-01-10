@@ -1,0 +1,45 @@
+---
+
+- name: "安装依赖软件"
+  yum: name={{ item }} state=present
+  with_items:
+    - sqlite-devel
+    - net-snmp-devel
+    - libxml2-devel
+    - libcurl-devel
+    - libevent-devel
+    - fping
+
+- name: "编译安装 zabbix-proxy"
+  script: ../files/install-proxy.sh
+
+- name: "创建数据库存储目录"
+  file: path={{ item.p }} owner={{ item.u }} group={{ item.g }} mode={{ item.m }} state={{ item.s }}
+  with_items:
+    - { p: '/data', u: 'root', g: 'root', m: '0755', s: 'directory'  }
+    - { p: '/data/sqlite', u: 'zabbix', g: 'zabbix', m: '0755', s: 'directory' }
+    - { p: '/data/sqlite/zabbix_proxy.db', u: 'zabbix', g: 'zabbix', m: '0744', s: 'touch' }
+
+- name: "导入数据到数据库"
+  shell: /usr/bin/sqlite3 /data/sqlite/zabbix_proxy.db < /opt/software/zabbix-3.4.4/database/sqlite3/schema.sql
+
+- name: "配置 zabbix-proxy"
+  template:
+    src=zabbix_proxy.conf.j2
+    dest=/usr/local/zabbix/etc/zabbix_proxy.conf
+    owner=zabbix
+    group=zabbix
+    mode=0644
+
+- name: "创建程序链接"
+  file: src={{ item.s }} dest={{ item.d }} state=link
+  with_items:
+    - { s: '/usr/local/zabbix/sbin/zabbix_proxy', d: '/usr/local/sbin/zabbix_proxy' }
+    - { s: '/usr/local/zabbix/bin/zabbix_get', d: '/usr/local/bin/zabbix_get' }
+    - { s: '/usr/local/zabbix/bin/zabbix_sender', d: '/usr/local/bin/zabbix_sender' }
+
+- name: "设置开机启动并启动 zabbix-proxy"
+  copy: src=../files/zabbix_proxy.service dest=/usr/lib/systemd/system/zabbix_proxy.service
+  notify:
+    - enable zabbix proxy
+    - start zabbix proxy

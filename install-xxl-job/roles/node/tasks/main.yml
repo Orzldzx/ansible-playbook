@@ -1,0 +1,12 @@
+---
+
+- name: Create DIR
+  file: path=/opt/software/xxl-job state=directory
+
+- name: Copy xxl-job-agent package to server
+  copy: src=../file/xxl-job-{{ group_names[0] }}-springboot-1.8.2.jar dest=/opt/software/xxl-job
+
+- name: Configuring Supervisor
+  template: src=xxl-job-agent.conf.j2 dest=/etc/supervisor.conf.d/xxl-job-agent.conf
+  notify:
+  - start xxl-job-agent

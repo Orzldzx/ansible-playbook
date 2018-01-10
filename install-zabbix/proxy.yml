@@ -1,0 +1,8 @@
+---
+
+- hosts: '{{ hosts }}'
+  gather_facts: true
+
+  roles:
+    - proxy
+  #  - { role: agent, tags: ['agent'] }

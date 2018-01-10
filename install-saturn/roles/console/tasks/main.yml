@@ -1,0 +1,42 @@
+---
+
+- name: Create group
+  group: name=zookeeper state=present
+
+- name: Create user
+  user: name=zookeeper shell=/sbin/nologin group=zookeeper comment=zookeeper
+
+- name: Create DIRS
+  file: path={{ item.name }} owner={{ item.owner }} mode={{ item.mode }} state=directory follow=yes
+  with_items:
+  - { name: '/opt/software', owner: 'root', mode: 'u=rwx,g=rx,o=rx' }
+  - { name: '/data', owner: 'root', mode: 'u=rwx,g=rx,o=rx' }
+  - { name: '/data/zookeeper', owner: 'zookeeper', mode: 'u=rwx,g=rx,o=rx' }
+  - { name: '/data/zookeeper/log', owner: 'zookeeper', mode: 'u=rwx,g=rx,o=rx' }
+
+- name: Copy package to server
+  unarchive: src=../file/{{ item.name }}.tgz dest=/opt/software/ owner={{ item.owner }}
+  with_items:
+  - { name: 'zookeeper', owner: 'zookeeper' }
+  - { name: 'saturn-console', owner: 'root' }
+  #ignore_errors: yes
+
+- name: ADD zookeeper to auto start
+  copy: src=../file/zookeeper.service dest=/usr/lib/systemd/system/zookeeper.service
+  notify:
+  - enable zookeeper
+  - start zookeeper
+
+- name: Insert zookeeper info to mysql
+  shell: mysql -h47.96.248.160 -usaturn -psaturn123 saturn-console -e "insert into zk_cluster_info (zk_cluster_key, alias, connect_string) values('/{{item}}','zk-{{item}}','{{item}}.whzhihua.com:2181');"
+  with_items: group_names
+  when: item != 'jump'
+
+
+- name: Insert namespace to mysql
+  shell: mysql -h47.96.248.160 -usaturn -psaturn123 saturn-console -e "insert into namespace_zkcluster_mapping (is_deleted, zk_cluster_key, namespace, name) values(0, '/{{item}}', '{{item}}', 'gamesvrd');"
+  with_items: group_names
+  when: item != 'jump'
+
+- name: start saturn-console
+  shell: chdir=/opt/software/saturn-console bash startup.sh

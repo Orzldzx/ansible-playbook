@@ -1,0 +1,10 @@
+---
+
+- hosts: all
+  gather_facts: true
+  
+  roles:
+  - role: init
+  - { role: console, tags: [ "console" ] }
+  - { role: executor, tags: [ "executor" ] }
+

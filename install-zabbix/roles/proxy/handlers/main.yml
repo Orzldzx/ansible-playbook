@@ -1,0 +1,7 @@
+---
+
+- name: enable zabbix proxy
+  service: name=zabbix_proxy enabled=yes
+
+- name: start zabbix proxy
+  service: name=zabbix_proxy state=started

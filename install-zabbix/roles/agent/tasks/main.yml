@@ -1,0 +1,21 @@
+---
+
+- name: "编译安装 zabbix-agent"
+  script: ../files/install-agentd.sh
+
+- name: "配置 zabbix-agent"
+  template: src=../templates/{{ item.s }} dest={{ item.d }}/{{ item.c }} owner=zabbix group=zabbix mode=0644
+  with_items:
+    - { s: 'zabbix_agentd.conf.j2', d: '/usr/local/zabbix/etc', c: 'zabbix_agentd.conf' }
+    - { s: 'Orzldzx.conf.j2', d: '/usr/local/zabbix/etc/zabbix_agentd.conf.d', c: 'Orzldzx.conf' }
+
+- name: "创建程序链接"
+  file: src={{ item.s }} dest={{ item.d }} state=link
+  with_items:
+    - { s: '/usr/local/zabbix/sbin/zabbix_agentd', d: '/usr/local/sbin/zabbix_agentd' }
+
+- name: "设置开机启动并启动 zabbix-agent"
+  copy: src=../files/zabbix_agentd.service dest=/usr/lib/systemd/system/zabbix_agentd.service
+  notify:
+    - enable zabbix agent
+    - start zabbix agent

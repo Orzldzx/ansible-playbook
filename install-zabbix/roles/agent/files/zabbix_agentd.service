@@ -1,0 +1,14 @@
+[Unit]
+Description=Zabbix agent
+Documentation=https://www.zabbix.com/documentation/3.4/zh/manual
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/zabbix/zabbix_agentd.pid
+ExecStart=/usr/local/sbin/zabbix_agentd
+ExecStop=pkill zabbix_agentd
+User=zabbix
+
+[Install]
+WantedBy=multi-user.target

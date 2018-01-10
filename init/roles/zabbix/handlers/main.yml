@@ -1,7 +1,0 @@
----
-
-- name: start zabbix client
-  shell: chdir=/opt/zabbix-2.4.6/sbin ./zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
-
-- name: Clear tmpfile
-  shell: rm -rf /tmp/zabbix*

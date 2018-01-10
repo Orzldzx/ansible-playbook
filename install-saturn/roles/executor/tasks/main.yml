@@ -1,0 +1,21 @@
+---
+
+- name: Write hosts
+  lineinfile: 
+    dest: /etc/hosts 
+    state: present 
+    regexp: "{{ item }}.whzhihua.com$" 
+    line: "{{ other_ip }} {{ item }}.whzhihua.com"
+  with_items: group_names
+  when: item != 'jump'
+
+- name: Create DIR
+  file: path=/opt/software state=directory
+
+- name: Copy saturn-executor package to server
+  unarchive: src=../file/saturn-executor.tgz dest=/opt/software/
+
+- name: Configuring saturn-executor
+  template: src=saturn-executor.sh.j2 dest=/opt/software/saturn-executor-2.1.4/bin/saturn-executor.sh mode=a+x
+  notify:
+  - start saturn-executor

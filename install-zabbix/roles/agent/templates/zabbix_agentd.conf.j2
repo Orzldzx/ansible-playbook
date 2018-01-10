@@ -1,0 +1,8 @@
+PidFile=/tmp/zabbix/zabbix_agentd.pid
+LogFile=/var/log/zabbix/zabbix_agentd.log
+LogFileSize=30
+Server={{ zabbix_proxy }}
+ServerActive={{ zabbix_proxy }}
+Hostname={{ inventory_hostname }}
+HostMetadataItem=system.uname
+Include=/usr/local/zabbix/etc/zabbix_agentd.conf.d/

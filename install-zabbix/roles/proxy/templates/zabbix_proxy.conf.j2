@@ -1,0 +1,9 @@
+Server={{ zabbix_server }}
+Hostname=Zabbix-{{ proxy_zone }}-proxy
+LogFile=/var/log/zabbix/zabbix_proxy.log
+PidFile=/tmp/zabbix/zabbix_proxy.pid
+DBName=/data/sqlite/zabbix_proxy.db
+ConfigFrequency=900
+StartDiscoverers=5
+Timeout=4
+LogSlowQueries=3000

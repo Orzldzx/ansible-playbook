@@ -1,0 +1,10 @@
+---
+
+- name: Create DIR
+  file: path=/opt/software state=directory
+
+- name: copy xxl-job-admin to server
+  unarchive: src=../file/xxl-job-admin.tgz dest=/opt/software/
+  notify:
+  - chmod +x script
+  - start xxl-job-admin

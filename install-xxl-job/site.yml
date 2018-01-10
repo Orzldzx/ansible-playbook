@@ -1,0 +1,9 @@
+---
+
+- hosts: all
+  gather_facts: false
+  
+  roles:
+  - { role: init,  tags: [ "init" ] }
+  - { role: admin, tags: [ "xxl-job-admin" ] }
+  - { role: node,  tags: [ "xxl-job-node" ] }
