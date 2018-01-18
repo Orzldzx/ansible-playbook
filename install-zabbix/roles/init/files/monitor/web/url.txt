@@ -1,0 +1,3 @@
+# 项目名     url     返回值(逗号分隔)
+金币场充值,http://jbcpay.laiyouxi.com/ck.html,jbcpay
+测试,https://iospay.laiyouxi.com/ck.html,check
