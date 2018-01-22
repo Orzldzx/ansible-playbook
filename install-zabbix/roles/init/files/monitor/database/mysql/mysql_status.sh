@@ -2,9 +2,9 @@
 
 ARGS=2
 if [ $# -ne "$ARGS" ]; then
-    echo "Please input one arguement:" 
+    echo "Please input one arguement:"
 fi
- 
+
 if [[ $1 -eq "3306" ]]; then
     MYSQL_SOCK=$(cat /etc/my.cnf |grep -wi sock |sort |uniq -c |awk '{print $NF}' | uniq)
 else
@@ -23,8 +23,8 @@ case $2 in
         ;;
     Uptime)
         result=$(mysqladmin -uroot -p${MYSQL_PWD} -S $MYSQL_SOCK status 2>/dev/null |cut -f2 -d":" |cut -f1 -d"T")
-        echo $result 
-        ;; 
+        echo $result
+        ;;
     Process)
         result=$(mysqladmin -uroot -p${MYSQL_PWD} -S $MYSQL_SOCK processlist 2>/dev/null |grep "^| [0-9]" |wc -l)
         echo $result
@@ -35,8 +35,8 @@ case $2 in
         ;;
     Slow_queries)
         result=$(mysqladmin -uroot -p${MYSQL_PWD} -S $MYSQL_SOCK status 2>/dev/null |cut -f5 -d":" |cut -f1 -d"O")
-        echo $result 
-        ;; 
+        echo $result
+        ;;
     Com_select)
         result=$(mysqladmin -uroot -p${MYSQL_PWD} -S $MYSQL_SOCK extended-status 2>/dev/null |grep -w "Com_select" |cut -d"|" -f3)
         echo $result
@@ -73,5 +73,5 @@ case $2 in
         result=$(mysqladmin -uroot -p${MYSQL_PWD} -S $MYSQL_SOCK extended-status 2>/dev/null |grep -w "Com_begin" |cut -d"|" -f3)
         echo $result
         ;;
-    *) echo "  Usage: $0 MYSQL_PORT [Uptime|Com_update|Slow_queries|Com_select|Com_rollback|Questions]" ;; 
+    *) echo "  Usage: $0 MYSQL_PORT [Uptime|Com_update|Slow_queries|Com_select|Com_rollback|Questions]" ;;
 esac

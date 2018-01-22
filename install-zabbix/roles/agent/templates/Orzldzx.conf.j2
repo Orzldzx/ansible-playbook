@@ -77,8 +77,16 @@ UserParameter=disk.io.nowrite[*],sudo /monitor/system/io-all CHECK $1
 
 # ---------------------------------------------------
 # 对比时间
-UserParameter=sys.time,/monitor/system/sys-time -H ntp1.cloud.aliyuncs.com -w 0.5|grep -wc OK
+#UserParameter=sys.time,/monitor/system/sys-time -H ntp1.cloud.aliyuncs.com -w 0.5|grep -wc OK
+UserParameter=sys.time,/usr/bin/ntpstat | awk '$1 ~ /time/ {print $5}'
 
 # ---------------------------------------------------
 # 监控tcp状态
 UserParameter=net.tcp.status[*],/monitor/net/check-tcp-status $1
+
+# ---------------------------------------------------
+# WEB 监控
+UserParameter=web.site.discovery,/monitor/web/web_discovery.py
+UserParameter=web.site.code[*],/monitor/web/web_status.py --url $1 --webresult $2 $3
+UserParameter=web.site.result[*],/monitor/web/web_status.py --url $1 --webresult $2 $3
+

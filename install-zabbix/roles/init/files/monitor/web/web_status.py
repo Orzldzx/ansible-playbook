@@ -18,7 +18,7 @@ class WebStatus():
 
         self.c = pycurl.Curl()
         self.c.setopt(pycurl.URL, url)
-        self.c.setopt(pycurl.TIMEOUT, 3)
+        self.c.setopt(pycurl.TIMEOUT, 2)
         self.c.setopt(pycurl.NOPROGRESS, 1)
         self.c.setopt(pycurl.WRITEFUNCTION, self.b.write)
 
@@ -53,7 +53,7 @@ class WebStatus():
     def GetDownloadSpeed(self):
         self.ExecCurl()
         t = self.c.getinfo(pycurl.SPEED_DOWNLOAD)
-        print(int(t))
+        print(int(t) * 1024)
         self.__close()
 
     def GetRCode(self):

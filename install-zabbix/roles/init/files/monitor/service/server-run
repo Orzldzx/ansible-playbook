@@ -1,6 +1,6 @@
 #!/bin/bash
 # 1un
-# 2017-12-19 -update (更新进程tcp监控)
+# 2018-01-19 -update (切换tcp状态获取方式)
 # zabbix自动发现服务项,监控服务各项状态
 
 #[ ! -s /svndata/svr/mod.txt ] && echo 1 && exit
@@ -107,14 +107,16 @@ GetTCP(){
     _PNAME=${1%_*}
     PNAME=${_PNAME:0:15}
     tcp=${2:-99999}
-    state=(established syn-sent syn-recv fin-wait-1 fin-wait-2 time-wait closed close-wait last-ack listen closing)
+    state=(ESTABLISHED SYN_SENT SYN_RECV FIN_WAIT1 FIN_WAIT2 TIME_WAIT CLOSED CLOSE_WAIT LAST_ACK CLOSING)
     _port=$(/sbin/ss -tlnp | awk '$6 ~ /'""$PNAME""'/ {print $4}')
     port=${_port#*\*}
 
     if [[ "X$2" == "Xall" ]]; then
-        num=$(/sbin/ss -t -o state all sport = $port | egrep -v '^State|^LISTEN' | wc -l)
+        #num=$(/sbin/ss -t -o state all sport = $port | egrep -v '^State|^LISTEN' | wc -l)
+	    num=$(/bin/netstat -n | awk '$4 ~ /'""$port""'/ {print}' | wc -l)
     elif [[ "$(echo ${state[@]} | grep -c $tcp)"  -gt 0 ]]; then
-        num=$(/sbin/ss -t -o state $2 sport = $port | egrep -v '^State|^LISTEN' | wc -l)
+        #num=$(/sbin/ss -t -o state $2 sport = $port | egrep -v '^State|^LISTEN' | wc -l)
+	    num=$(/bin/netstat -n | awk '$4 ~ /'""$port""'/ {print}' | grep -c $tcp)
     else
         echo "Usage: $0 GetTCP $1 [ established | syn-sent | syn-recv | fin-wait-1 | fin-wait-2 | time-wait | closed | close-wait | last-ack | listen | closing ]"
     fi

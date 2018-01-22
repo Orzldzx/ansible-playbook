@@ -10,15 +10,19 @@ elif [[ $(grep -c 'visiblepw' /etc/sudoers) == 1 ]]; then
     sed -i "s/$line/# $line/" /etc/sudoers
     sed -i "/$line/a\Defaults   visiblepw" /etc/sudoers
 else
-    exit 0
+    # exit 0
+    echo
 fi
 
+if [[ $(/bin/grep -ic 'zabbix' /etc/sudoers) > 0 ]]; then
+    /bin/sed -i 's@^Cmnd_Alias ZABBIX.*$@Cmnd_Alias ZABBIX = /monitor/service/server-run, /monitor/system/io-all@' /etc/sudoers
+fi
 
 cat >> /etc/sudoers << EOF
 
 
 ## Zabbix
-Cmnd_Alias ZABBIX = /monitor/service/server-run, /monitor/service/sql-run, /monitor/system/io-all, /monitor/database/mysql/mysql_discovery.py
+Cmnd_Alias ZABBIX = /monitor/service/server-run, /monitor/system/io-all
 
 zabbix ALL = (root) NOPASSWD: ZABBIX
 EOF
